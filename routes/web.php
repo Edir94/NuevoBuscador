@@ -23,3 +23,8 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
+Route::resource('/favoritos', 'ControllerFavorito');
+
+//Route::get('/prueba','ControllerBusqueda@busquedaAvanzada');
+
+Route::get('/api/Busqueda','ControllerBusqueda@busquedaAvanzada');

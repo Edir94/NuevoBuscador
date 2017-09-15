@@ -14,8 +14,15 @@ class CreateMediosPrensaTable extends Migration
     public function up()
     {
         Schema::create('mediosPrensa', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->increments('id');
-            $table->timestamps();
+            $table->string('nombreMedio');
+            $table->string('subTipoMedio');
+            $table->datetime('fechaRegistro')->nullable();
+            $table->integer('estado')->default(1);
+            $table->integer('tipoMedios_id')->unsigned();
+            $table->foreign('tipoMedios_id')->references('id')->on('tipoMedios');
+            //$table->timestamps();
         });
     }
 

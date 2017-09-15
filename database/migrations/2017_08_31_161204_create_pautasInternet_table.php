@@ -15,13 +15,13 @@ class CreatePautasInternetTable extends Migration
     {
         Schema::create('pautasInternet', function (Blueprint $table) {
             $table->engine = 'InnoDB';
-            $table->increments('id');
+            $table->bigIncrements('id');
             $table->text('titular');
             $table->text('texto');
             $table->date('fechaPauta');
             $table->string('rutaImagen');
             $table->double('equivalencia');
-            $table->datetime('fechaRegistro');
+            $table->datetime('fechaRegistro')->nullable();
             //$table->datetime('fechaActualizacion');
             $table->string('tipoPauta')->default('Internet');
             $table->integer('estado')->default(1);

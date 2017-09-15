@@ -10,14 +10,14 @@
 			<div class="form-group col-md-12 col-lg-12 col-sm-12 col-xs-12">
 				<label>Texto:</label>
 				<div class="input-group col-md-12">
-					<a href="#" data-tooltip=" 'O' = 'TAB' " data-placement="bottom"><input type="text" class="form-control" id="TextoBusqueda" name="TextoBusqueda" placeholder="Ingrese texto a buscar"></a>
+					<a href="#" data-tooltip=" 'O' = 'TAB' " data-placement="bottom"><input type="text" class="form-control" id="textoBusqueda" name="textoBusqueda" placeholder="Ingrese texto a buscar"></a>
 				</div><!-- /.input group -->
 			</div><!-- /.form group -->
 		</div>
 		<div class="row">
 			<div class="form-group col-md-12 col-lg-12 col-sm-12 col-xs-12">
 				<label>Medio:</label>
-				{{ Form::text('idcanal', null, ['id' =>  'idcanal', 'placeholder' =>  'Escriba un canal','class'=>'typeahead form-control'])}}
+				{{ Form::text('medioBusqueda', null, ['id' =>  'medioBusqueda', 'placeholder' =>  'Escriba un canal','class'=>'typeahead form-control'])}}
 			</div><!-- /.form group -->
 		</div>
 		<div class="row">
@@ -54,7 +54,7 @@
 		</div>
 
 		<div class="form-group col-lg-12 col-md-10 col-sm-10 col-xs-12">                        
-			<button type="button" id="BusquedaAvanzada" onclick="" class="btn btn-primary">Buscar</button>
+			<button type="button" id="BusquedaAvanzada" onclick="BuscarPautas();" class="btn btn-primary">Buscar</button>
 		</div><!-- /.form group -->
     </div><!-- /.panel body -->
     

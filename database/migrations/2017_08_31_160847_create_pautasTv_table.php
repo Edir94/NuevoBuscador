@@ -15,7 +15,7 @@ class CreatePautasTvTable extends Migration
     {
         Schema::create('pautasTv', function (Blueprint $table) {
             $table->engine = 'InnoDB';
-            $table->increments('id');
+            $table->bigIncrements('id');
             $table->text('titular');
             $table->text('texto');
             $table->date('fechaPauta');

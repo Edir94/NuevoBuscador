@@ -26,10 +26,14 @@
     <!-- Ionicons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">
     <!-- DataTables -->
+    <link rel="stylesheet" href="{{ asset('plugins/datatables/jquery.dataTables.min.css') }}">
     <link rel="stylesheet" href="{{ asset('plugins/datatables/dataTables.bootstrap.css') }}">
+    <link rel="stylesheet" href="{{ asset('plugins/datatables/extensions/Responsive/css/dataTables.responsive.css') }}">
     <!-- AdminLTE Skins. Choose a skin from the css/skins
        folder instead of downloading all of them to reduce the load. -->
     <link rel="stylesheet" href="{{ asset('dist/css/skins/_all-skins.min.css') }}">
+    <!-- Boostrap Tokenfield -->
+    <link rel="stylesheet" href="{{{ asset('plugins/bootstrap-tokenfield/bootstrap-tokenfield.min.css')}}}" >
 </head>
 <body>
     <div id="app">
@@ -55,10 +59,10 @@
                     <!-- Left Side Of Navbar -->
                     @if(!Auth::guest())
                     <ul class="nav navbar-nav">
-                        <li><a href="">Búsqueda</a></li>
+                        <li><a href="{{ url('/home') }}">Búsqueda</a></li>
                     </ul>
                     <ul class="nav navbar-nav">
-                        <li><a href="">Favoritos</a></li>
+                        <li><a href="{{url('/favoritos')}}">Favoritos</a></li>
                     </ul>
                     @endif
                     <!-- Right Side Of Navbar -->
@@ -92,14 +96,14 @@
                 </div>
             </div>
         </nav>
-
+        <input type="hidden" id="token" name="_token" value="{{ csrf_token() }}">
         @yield('content')
     </div>
 
     <!-- Scripts -->
     <!-- jQuery 2.2.3 -->
     <script src="{{ asset('plugins/jQuery/jquery-2.2.3.min.js') }}"></script>
-    <!-- jQuery UI 1.11.4 -->
+    <!-- jQuery UI 1.12.1 -->
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <!-- Bootstrap 3.3.6 -->
     <script src="{{ asset('bootstrap/js/bootstrap.min.js') }}"></script>
@@ -110,11 +114,16 @@
     <script src="{{ asset('plugins/datepicker/bootstrap-datepicker.js') }}"></script>
     <!-- Datatables -->
     <script src="{{ asset('plugins/datatables/jquery.dataTables.min.js') }}"></script>
+    {!!Html::script('plugins/datatables/dataTables.bootstrap.min.js')!!}
+    {!!Html::script('plugins/datatables/extensions/Responsive/js/dataTables.responsive.min.js')!!}
+    <!-- Boostrap Tokenfield -->
+    {!!Html::script('plugins/bootstrap-tokenfield/bootstrap-tokenfield.min.js')!!}
 
 
     <!--Public Scripts -->
     <!--script src="{/{ asset('js/app.js') }}"></script-->
     <script src="{{ asset('js/script.js') }}"></script>
+    <script src="{{ asset('js/sandra.js') }}"></script>
 </body>
 </html>
 

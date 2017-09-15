@@ -17,7 +17,7 @@ class CreateMediosAVTable extends Migration
             $table->engine = 'InnoDB';
             $table->increments('id');
             $table->string('nombreMedio');
-            $table->integer('telefono')->nullable();
+            $table->string('detalles')->nullable();
             $table->date('fechaRegistro')->nullable();
             //$table->date('fechaActualizacion')->nullable();
             $table->integer('estado')->default(1);

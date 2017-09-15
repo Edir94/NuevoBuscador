@@ -16,8 +16,8 @@ class CreateTipoMediosTable extends Migration
         Schema::create('tipoMedios', function (Blueprint $table) {
             $table->increments('id');
             $table->string('nombreTipo');
-            $table->date('fechaRegistro');
-            $table->date('fechaActualizacion');
+            $table->date('fechaRegistro')->nullable();
+            $table->date('fechaActualizacion')->nullable();
             //$table->timestamps();
         });
     }
