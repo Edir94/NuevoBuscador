@@ -185,6 +185,10 @@ return [
          * Datatables
          */
         Yajra\DataTables\DataTablesServiceProvider::class,
+        /*
+         * Maatwebsite Excel
+         */
+        Maatwebsite\Excel\ExcelServiceProvider::class,
 
     ],
 
@@ -243,6 +247,10 @@ return [
          * Datatables
          */
         'DataTables' => Yajra\DataTables\Facades\DataTables::class,
+        /*
+         * Maatwebsite Excel
+         */
+        'Excel' => Maatwebsite\Excel\Facades\Excel::class,
 
     ],
 

@@ -17,6 +17,8 @@
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <!-- Bootstrap 3.3.6 -->
     <link rel="stylesheet" href="{{ asset('bootstrap/css/bootstrap.min.css') }}">
+    <!-- Jquery UI -->
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.min.css">
     <!-- Date Picker -->
     <link rel="stylesheet" href="{{ asset('plugins/datepicker/datepicker3.css') }}">
     <!-- Daterange picker -->
@@ -33,7 +35,7 @@
        folder instead of downloading all of them to reduce the load. -->
     <link rel="stylesheet" href="{{ asset('dist/css/skins/_all-skins.min.css') }}">
     <!-- Boostrap Tokenfield -->
-    <link rel="stylesheet" href="{{{ asset('plugins/bootstrap-tokenfield/bootstrap-tokenfield.min.css')}}}" >
+    <link rel="stylesheet" href="{{ asset('plugins/bootstrap-tokenfield/css/bootstrap-tokenfield.min.css')}}">
 </head>
 <body>
     <div id="app">
@@ -49,10 +51,19 @@
                     </button>
 
                     <!-- Branding Image -->
-                    <a class="navbar-brand" href="{{ url('/') }}">
-                        <!--{/{ config('app.name', 'Laravel') }}-->
-                        Noticias Perú
-                    </a>
+                    @if(Auth::guest())
+                        <a class="navbar-brand" href="{{ url('/') }}">
+                            <!--{/{ config('app.name', 'Laravel') }}-->
+                            <!--Noticias Perú-->
+                            <img src="../logo.png" alt="logo" width="80%" style="margin:-5px 0px 0px 0px;" id="logo-empresa">
+                        </a>
+                    @else
+                        <a class="navbar-brand" href="{{ url('/home') }}">
+                            <!--{/{ config('app.name', 'Laravel') }}-->
+                            <!--Noticias Perú-->
+                            <img src="../logo.png" alt="logo" width="80%" style="margin:-5px 0px 0px 0px;" id="logo-empresa">
+                        </a>
+                    @endif
                 </div>
 
                 <div class="collapse navbar-collapse" id="app-navbar-collapse">

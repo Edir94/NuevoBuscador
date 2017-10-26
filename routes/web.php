@@ -28,3 +28,19 @@ Route::resource('/favoritos', 'ControllerFavorito');
 //Route::get('/prueba','ControllerBusqueda@busquedaAvanzada');
 
 Route::get('/api/Busqueda','ControllerBusqueda@busquedaAvanzada');
+Route::get('/search/medios','ControllerBusqueda@autocompleteMedios');
+
+Route::get('/api/Busqueda2','ControllerBusqueda@busquedaAvanzada2');
+
+Route::get('/vistaPrensa/{id}','ControllerVistas@indexPrensa');
+Route::get('/vistaTelevisión/{id}','ControllerVistas@indexTv');
+Route::get('/vistaRadio/{id}','ControllerVistas@indexRadio');
+Route::get('/vistaInternet/{id}','ControllerVistas@indexInternet');
+Route::get('/prueba','ControllerBusqueda@index');
+
+
+//FAVORITO 
+
+//Route::resource('/favoritos','ControllerFavorito');
+Route::get('temas','ControllerFavorito@mostrarTema');
+Route::get('claves/{id}','ControllerFavorito@mostrarPalabraClave');
