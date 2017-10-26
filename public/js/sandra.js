@@ -1,5 +1,6 @@
 $(window).on('load',function(){
 	cargarfavorito();
+	estilo();
 });
 
 
@@ -43,30 +44,37 @@ function cargarPalabrasClaves(id){
 
 // --- TEMAS --- //
 
-$('.text-temas').tokenfield({
-    limit:1,
-    showAutocompleteOnFocus: true
-  });
-$('.text-temas').on('tokenfield:createtoken', function (event) {
-    var existingTokens = $(this).tokenfield('getTokens');
-    $.each(existingTokens, function(index, token) {
-        if (token.value === event.attrs.value)
-            event.preventDefault();
-    });
-});
+function estilo(){
 
-// --- TEMAS --- //
+	$('.text-temas').tokenfield({
+	    limit:1,
+	    showAutocompleteOnFocus: true
+	  });
+	$('.text-temas').on('tokenfield:createtoken', function (event) {
+	    var existingTokens = $(this).tokenfield('getTokens');
+	    $.each(existingTokens, function(index, token) {
+	        if (token.value === event.attrs.value)
+	            event.preventDefault();
+	    });
+	});
 
-$('.text-claves').tokenfield({
-    showAutocompleteOnFocus: true
-  });
-$('.text-claves').on('tokenfield:createtoken', function (event) {
-    var existingTokens = $(this).tokenfield('getTokens');
-    $.each(existingTokens, function(index, token) {
-        if (token.value === event.attrs.value)
-            event.preventDefault();
-    });
-});
+	// --- TEMAS --- //
+
+	$('.text-claves').tokenfield({
+	    showAutocompleteOnFocus: true
+	  });
+	$('.text-claves').on('tokenfield:createtoken', function (event) {
+	    var existingTokens = $(this).tokenfield('getTokens');
+	    $.each(existingTokens, function(index, token) {
+	        if (token.value === event.attrs.value)
+	            event.preventDefault();
+	    });
+	});
+
+
+}
+
+
 
 
 $('#btnAgregarFvorito').click(function(){
