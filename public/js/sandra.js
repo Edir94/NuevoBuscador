@@ -97,12 +97,13 @@ $('#btnAgregar').click(function(){
 
 function btnAgregar(obj){
 	var valor = $('#idFavorito > .palabraClaves > .div-eliminar').length;
-	$('#idFavorito').append('<div class="item form-group col-xs-12"><div id="idTema" class="col-xs-5 col-sm-5 col-md-5""><input type="text" class="col-xs-12 col-sm-12 col-md-12 text-temas" name="tema'+valor+'" id="tema'+valor+'"  value=""></div><div id="idPalabraClave" class="col-xs-5 col-sm-5 col-md-5""><input type="text" class="col-xs-12 col-sm-12 col-md-12 text-claves" name="pClave'+valor+'" id="pClave'+valor+'" value=""></div><div class="col-xs-2 col-md-1"><button type="button" class="btn-del-temas btn btn-default btn-xs" id="btnEliminar"><span class="glyphicon glyphicon-minus"></span></button></div></div>');
+	$('#idFavorito').append('<div class="item form-group col-xs-12 palabraClaves"><div id="idTema" class="col-xs-5 col-sm-5 col-md-5"><input type="text" class="col-xs-12 col-sm-12 col-md-12 text-temas" name="tema'+valor+'" id="tema'+valor+'"  value=""></div><div id="idPalabraClave" class="col-xs-5 col-sm-5 col-md-5""><input type="text" class="col-xs-12 col-sm-12 col-md-12 text-claves" name="pClave'+valor+'" id="pClave'+valor+'" value=""></div><div class="col-xs-2"><button type="button" class="btn-del-temas btn btn-default btn-xs col-md-offset-1" onclick="btnEliminar(this)"><span class="glyphicon glyphicon-minus"></span></button></div></div>');
 	//alert(valor);
-
+	estilo();
 
 }
 
 function btnEliminar(obj){
 
+	$(obj).parent().parent().remove();
 }

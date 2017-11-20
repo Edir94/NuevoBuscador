@@ -299,7 +299,7 @@ table.dataTable td {
   padding-top: 0.25em;
 }
 .dataTables_wrapper .dataTables_paginate .paginate_button {
-  box-sizing: border-box;
+  /*box-sizing: border-box;
   display: inline-block;
   min-width: 1.5em;
   padding: 0.5em 1em;
@@ -309,7 +309,11 @@ table.dataTable td {
   cursor: pointer;
   *cursor: hand;
   color: #333 !important;
-  border: 1px solid transparent;
+  border: 1px solid transparent;*/
+  padding : 0px;
+  margin-left: 0px;
+  display: inline;
+  border: 0px;
 }
 .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
   color: #333 !important;

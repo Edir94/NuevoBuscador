@@ -54,6 +54,48 @@ return [
             'engine' => null,
         ],
 
+        'mysql_24' => [
+            'driver' => 'mysql',
+            'host' => env('DB_EXT_HOST_24', '192.168.1.24'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => 'noticias_'.date('Y'),
+            'username' => env('DB_EXT_USERNAME_24', 'bd_fc01'),
+            'password' => env('DB_EXT_PASSWORD_24', 'SA72mR8@'),
+            'charset' => 'utf8',
+            'collation' => 'utf8_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
+        'mysql_24_prensa' => [
+            'driver' => 'mysql',
+            'host' => env('DB_EXT_HOST_24', '192.168.1.24'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => 'bd_web_noticias_'.date('Y'),
+            'username' => env('DB_EXT_USERNAME_24', 'bd_fc01'),
+            'password' => env('DB_EXT_PASSWORD_24', 'SA72mR8@'),
+            'charset' => 'utf8',
+            'collation' => 'utf8_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
+        'mysql_26' => [
+            'driver' => 'mysql',
+            'host' => env('DB_EXT_HOST_26', '192.168.1.26'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => 'Intranet_2016_NoticiasPeru',
+            'username' => env('DB_EXT_USERNAME_26', 'la_sis'),
+            'password' => env('DB_EXT_PASSWORD_26', 'ReT14xy@'),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
         'pgsql' => [
             'driver' => 'pgsql',
             'host' => env('DB_HOST', '127.0.0.1'),

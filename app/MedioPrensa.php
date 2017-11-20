@@ -7,4 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class MedioPrensa extends Model
 {
     protected $table = 'mediosPrensa';
+
+    public $timestamps = false;
 }

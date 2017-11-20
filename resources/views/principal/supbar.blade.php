@@ -9,7 +9,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>
-        Servicios | Noticias Perú
+        Bienvenidos a Noticias Perú, tenemos noticias para usted
     </title>
     <!--{/{ config('app.name', 'Laravel') }}-->
 
@@ -68,44 +68,46 @@
 
                 <div class="collapse navbar-collapse" id="app-navbar-collapse">
                     <!-- Left Side Of Navbar -->
-                    @if(!Auth::guest())
                     <ul class="nav navbar-nav">
-                        <li><a href="{{ url('/home') }}">Búsqueda</a></li>
+                        <li class=" active "><a href="#">Nosotros</a></li>
                     </ul>
                     <ul class="nav navbar-nav">
-                        <li><a href="{{url('/favoritos')}}">Favoritos</a></li>
+                        <li><a href="#">Ustedes</a></li>
                     </ul>
-                    @endif
+                    <ul class="nav navbar-nav">
+                        <li><a href="#">Clientes</a></li>
+                    </ul>
                     <!-- Right Side Of Navbar -->
                     <ul class="nav navbar-nav navbar-right">
+                        <li><a href="#">Contáctenos</a></li>
                         <!-- Authentication Links -->
-                        @if (Auth::guest())
-                            <li><a href="{{ route('login') }}">Ingresar</a></li>
-                            <li><a href="{{ route('register') }}">Registrarse</a></li>
-                        @else
+                        <!--@/if (Auth::guest())
+                            <li><a href="{/{ route('login') }}">Ingresar</a></li>
+                            <li><a href="{/{ route('register') }}">Registrarse</a></li>
+                        @/else
                             <li class="dropdown">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                                    Hola, {{ Auth::user()->name }} <span class="caret"></span>
+                                    Hola, {/{ Auth::user()->name }} <span class="caret"></span>
                                 </a>
 
                                 <ul class="dropdown-menu" role="menu">
                                     <li>
-                                        <a href="{{ route('logout') }}"
+                                        <a href="{/{ route('logout') }}"
                                             onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">
                                             Salir
                                         </a>
 
-                                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                                            {{ csrf_field() }}
+                                        <form id="logout-form" action="{/{ route('logout') }}" method="POST" style="display: none;">
+                                            {/{ csrf_field() }}
                                         </form>
                                     </li>
                                 </ul>
                             </li>
-                        @endif
+                        @/endif-->
                     </ul>
                 </div>
-            </div>
+            </div><!--container-->
         </nav>
         <input type="hidden" id="token" name="_token" value="{{ csrf_token() }}">
         @yield('content')

@@ -9,7 +9,7 @@
         <div class="col-xs-9">
             @include('inicial.resultados')
         </div>
-    </div>
+    </div><!-- ./row -->
     
 </div>
 @endsection

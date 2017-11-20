@@ -15,13 +15,15 @@ use App\PautaInternet;
 use App\MedioAV;
 use App\MedioPrensa;
 use App\MedioInternet;
+use App\SeccionPrensa;
 
 use App\PalabraClave;
 use Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use DB;
 
 class ControllerBusqueda extends Controller
 {
-    private $arrayBusqueda;
     /**
      * Display a listing of the resource.
      *
@@ -136,8 +138,8 @@ class ControllerBusqueda extends Controller
             $dataResponse->push(['id'=>$pautaInternet->id, 'fechaPauta'=>$pautaInternet->fechaPauta, 'tipoPauta'=>$pautaInternet->tipoPauta, 'nombreMedio'=>$pautaInternet->nombreMedio, 'nombreSP'=>"", 'titular'=>$pautaInternet->titular]);
         }
 
-        $this->arrayBusqueda = $dataResponse;
-        //echo "hola".$this->arrayBusqueda;
+        session()->put('arrayBusqueda',$dataResponse);
+        session()->put('arrayFiltrado',$dataResponse);
         //return response()->json($dataResponse, 200, ['Content-type'=> 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
         return DataTables::of($dataResponse)
             ->addColumn('opciones',function($dataResponse){
@@ -145,12 +147,21 @@ class ControllerBusqueda extends Controller
                 $tipoPauta = $dataResponse['tipoPauta'];
                 return '<div align="center">
                             <a href="#" data-toggle="tooltip" data-placement="top" title="Abrir Pauta">
-                                <button value="'.$tipoPauta."-".$id.'" onclick="AbrirPauta(this);" class="btn btn-sm btn-info Imagen" data-toggle="modal" data-target="#myCliente" data-id="'.$id.'"><i class="glyphicon glyphicon-globe"></i></button>
+                                <button value="'.$tipoPauta."-".$id.'" onclick="AbrirPauta(this);" class="btn btn-sm btn-info Imagen" data-toggle="modal" data-target="#" data-id="'.$id.'"><i class="glyphicon glyphicon-globe"></i></button>
                             </a>
                         </div>';
             })
-            ->rawColumns(['opciones'])
-            ->editColumn('titular','{{substr($titular,0,40)}} ')
+            ->addColumn('checkPauta',function($dataResponse){
+                $id = $dataResponse['id'];
+                $tipoPauta = $dataResponse['tipoPauta'];
+                return '<div align="center">
+                            <input type="checkbox" name="checkPauta" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true">
+                        </div>';
+            })
+            ->editColumn('titular','<span title="{{$titular}}" data-toogle="tooltip" data-placement="top">{{substr($titular,0,35)}}</span>')
+            ->editColumn('nombreMedio','<span title="{{$nombreMedio}}" data-toogle="tooltip" data-placement="top">{{substr($nombreMedio,0,8)}}</span>')
+            ->editColumn('nombreSP','<span title="{{$nombreSP}}" data-toogle="tooltip" data-placement="top">{{substr($nombreSP,0,10)}}</span>')
+            ->rawColumns(['opciones','checkPauta','nombreMedio','nombreSP','titular'])
             ->make(true);
     }
 
@@ -339,8 +350,8 @@ class ControllerBusqueda extends Controller
             }
         }//end if
         
-        $this->arrayBusqueda = $dataResponse;
-        //echo "hola".$this->arrayBusqueda;
+        session()->put('arrayBusqueda',$dataResponse);
+        session()->put('arrayFiltrado',$dataResponse);
         //return response()->json($dataResponse, 200, ['Content-type'=> 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
         return DataTables::of($dataResponse)
             ->addColumn('opciones',function($dataResponse){
@@ -348,63 +359,343 @@ class ControllerBusqueda extends Controller
                 $tipoPauta = $dataResponse['tipoPauta'];
                 return '<div align="center">
                             <a href="#" data-toggle="tooltip" data-placement="top" title="Abrir Pauta">
-                                <button value="'.$tipoPauta."-".$id.'" onclick="AbrirPauta(this);" class="btn btn-sm btn-info Imagen" data-toggle="modal" data-target="#myCliente" data-id="'.$id.'"><i class="glyphicon glyphicon-globe"></i></button>
+                                <button value="'.$tipoPauta."-".$id.'" onclick="AbrirPauta(this);" class="btn btn-sm btn-info Imagen" data-toggle="modal" data-target="#" data-id="'.$id.'"><i class="glyphicon glyphicon-globe"></i></button>
                             </a>
                         </div>';
             })
-            ->rawColumns(['opciones'])
-            ->editColumn('titular','{{substr($titular,0,40)}} ')
+            ->addColumn('checkPauta',function($dataResponse){
+                $id = $dataResponse['id'];
+                $tipoPauta = $dataResponse['tipoPauta'];
+                return '<div align="center">
+                            <input type="checkbox" name="checkPauta" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true">
+                        </div>';
+            })
+            ->editColumn('titular','<span title="{{$titular}}" data-toogle="tooltip" data-placement="top">{{substr($titular,0,35)}}</span>')
+            ->editColumn('nombreMedio','<span title="{{$nombreMedio}}" data-toogle="tooltip" data-placement="top">{{substr($nombreMedio,0,8)}}</span>')
+            ->editColumn('nombreSP','<span title="{{$nombreSP}}" data-toogle="tooltip" data-placement="top">{{substr($nombreSP,0,10)}}</span>')
+            ->rawColumns(['opciones','checkPauta','nombreMedio','nombreSP','titular'])
             ->make(true);
     }
 
-    public function autocompleteMedios(){
-        $mediosAV =MedioAV::where(function($data)
-            { 
-              $term= Input::get('term');
-              $data->where('nombreMedio','like','%'.$term.'%');
-            })
-            ->select("id","nombreMedio")
-            ->take(6)
-            ->get();
+    public function autocompleteMedios($id){
+        $array=array();
 
-        $mediosPrensa =MedioPrensa::where(function($data)
-            { 
-              $term= Input::get('term');
-              $data->where('nombreMedio','like','%'.$term.'%');
-            })
-            ->select("id","nombreMedio")
-            ->take(6)
-            ->get();
+        if(strpos($id,"2")!==false){
+            $mediosTv =MedioAV::where(function($data)
+                { 
+                  $term= Input::get('term');
+                  $data->where('nombreMedio','like','%'.$term.'%');
+                })
+                ->where('tipoMedios_id','=',2)
+                ->select("id","nombreMedio")
+                ->take(6)
+                ->get();
+            foreach ($mediosTv as $medio) {
+                $array[]=['id'=>$medio->id,'value'=>$medio->nombreMedio];
+              }
+        }
+        if(strpos($id,"3")!==false){
+            $mediosRadio =MedioAV::where(function($data)
+                { 
+                  $term= Input::get('term');
+                  $data->where('nombreMedio','like','%'.$term.'%');
+                })
+                ->where('tipoMedios_id','=',3)
+                ->select("id","nombreMedio")
+                ->take(6)
+                ->get();
+            foreach ($mediosRadio as $medio) {
+                $array[]=['id'=>$medio->id,'value'=>$medio->nombreMedio];
+              }
+        }
+        if(strpos($id,"1")!==false){
+            $mediosPrensa =MedioPrensa::where(function($data)
+                { 
+                  $term= Input::get('term');
+                  $data->where('nombreMedio','like','%'.$term.'%');
+                })
+                ->select("id","nombreMedio")
+                ->take(6)
+                ->get();
+            foreach ($mediosPrensa as $medio) {
+                $array[]=['id'=>$medio->id,'value'=>$medio->nombreMedio];
+            }
+        }
+        if(strpos($id,"4")!==false){
+            $mediosInternet =MedioInternet::where(function($data)
+                { 
+                  $term= Input::get('term');
+                  $data->where('nombreMedio','like','%'.$term.'%');
+                })
+                ->select("id","nombreMedio")
+                ->take(6)
+                ->get();
+            foreach ($mediosInternet as $medio) {
+                $array[]=['id'=>$medio->id,'value'=>$medio->nombreMedio];
+            }
+        }
+        if (count($array)) {
+            return Response::json($array);
+        }else{
+            return ['id'=>'','value'=>''];
+        }
+    }
 
-        $mediosInternet =MedioInternet::where(function($data)
-            { 
-              $term= Input::get('term');
-              $data->where('nombreMedio','like','%'.$term.'%');
-            })
-            ->select("id","nombreMedio")
-            ->take(6)
-            ->get();
-
-      $array=array();
-      foreach ($mediosAV as $medio) {
-        $array[]=['id'=>$medio->id,'value'=>$medio->nombreMedio];
-      }
-      foreach ($mediosPrensa as $medio) {
-        $array[]=['id'=>$medio->id,'value'=>$medio->nombreMedio];
-      }
-      foreach ($mediosInternet as $medio) {
-        $array[]=['id'=>$medio->id,'value'=>$medio->nombreMedio];
-      }
-      if (count($array)) {
-        return Response::json($array);
-      }else{
-        return ['id'=>'','value'=>''];
-      }
+    public function cargarMediosFiltrado(){
+        $nombreMedios = array();
+        $arrayBusqueda = session()->get('arrayFiltrado');
+        foreach ($arrayBusqueda as $medio) {
+            $nombreMedios[] = $medio['nombreMedio'];
+        }
+        $nombreMedios = array_unique($nombreMedios);
+        //session()->put('arrayMedios',$nombreMedios);
+        return response()->json($nombreMedios, 200, ['Content-type'=> 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
     }
 
     public function filtradoRapido(Request $request)
     {
+        $arrayBusqueda = session()->get('arrayBusqueda');
+
+        $filtroPrensa = $request->filtroPrensa;
+        $filtroTv = $request->filtroTv;
+        $filtroRadio = $request->filtroRadio;
+        $filtroInternet = $request->filtroInternet;
+        $arrayMedios = $request->arrayMedios;
+
+        $arrayFiltrado = new Collection;
+
+        foreach ($arrayBusqueda as $pauta) {
+            if(count($arrayMedios)==0){
+                if($pauta['tipoPauta']=='Prensa'){
+                    if($filtroPrensa=='true'){
+                        $arrayFiltrado->push($pauta);
+                    }
+                }
+                if($pauta['tipoPauta']=='Televisión'){
+                    if($filtroTv=='true'){
+                        $arrayFiltrado->push($pauta);
+                    }
+                }
+                if($pauta['tipoPauta']=='Radio'){
+                    if($filtroRadio=='true'){
+                        $arrayFiltrado->push($pauta);
+                    }
+                }
+                if($pauta['tipoPauta']=='Internet'){
+                    if($filtroInternet=='true'){
+                        $arrayFiltrado->push($pauta);
+                    }
+                }
+            }else{
+                $i=0;
+                $verifica=true;
+                while ($i<count($arrayMedios) && $verifica) {
+                    if(strcmp($pauta['nombreMedio'], $arrayMedios[$i])==0){
+                        $verifica = false;
+                        $i = count($arrayMedios);
+                    }
+                    $i++;
+                }
+                if($pauta['tipoPauta']=='Prensa'){
+                    if($filtroPrensa=='true'){
+                        if($verifica){
+                            $arrayFiltrado->push($pauta);
+                        }
+                    }
+                }
+                if($pauta['tipoPauta']=='Televisión'){
+                    if($filtroTv=='true'){
+                        if($verifica){
+                            $arrayFiltrado->push($pauta);
+                        }
+                    }
+                }
+                if($pauta['tipoPauta']=='Radio'){
+                    if($filtroRadio=='true'){
+                        if($verifica){
+                            $arrayFiltrado->push($pauta);
+                        }
+                    }
+                }
+                if($pauta['tipoPauta']=='Internet'){
+                    if($filtroInternet=='true'){
+                        if($verifica){
+                            $arrayFiltrado->push($pauta);
+                        }
+                    }
+                }
+            }
+        }
+        session()->put('arrayFiltrado',$arrayFiltrado);
+        return DataTables::of($arrayFiltrado)
+            ->addColumn('opciones',function($arrayFiltrado){
+                $id = $arrayFiltrado['id'];
+                $tipoPauta = $arrayFiltrado['tipoPauta'];
+                return '<div align="center">
+                            <a href="#" data-toggle="tooltip" data-placement="top" title="Abrir Pauta">
+                                <button value="'.$tipoPauta."-".$id.'" onclick="AbrirPauta(this);" class="btn btn-sm btn-info Imagen" data-toggle="modal" data-target="#" data-id="'.$id.'"><i class="glyphicon glyphicon-globe"></i></button>
+                            </a>
+                        </div>';
+            })
+            ->addColumn('checkPauta',function($arrayFiltrado){
+                $id = $arrayFiltrado['id'];
+                $tipoPauta = $arrayFiltrado['tipoPauta'];
+                return '<div align="center">
+                            <input type="checkbox" name="checkPauta" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true">
+                        </div>';
+            })
+            ->editColumn('titular','<span title="{{$titular}}" data-toogle="tooltip" data-placement="top">{{substr($titular,0,35)}}</span>')
+            ->editColumn('nombreMedio','<span title="{{$nombreMedio}}" data-toogle="tooltip" data-placement="top">{{substr($nombreMedio,0,8)}}</span>')
+            ->editColumn('nombreSP','<span title="{{$nombreSP}}" data-toogle="tooltip" data-placement="top">{{substr($nombreSP,0,10)}}</span>')
+            ->rawColumns(['opciones','checkPauta','nombreMedio','nombreSP','titular'])
+            ->make(true);
+    }
+
+    public function exportarExcel(Request $request)
+    {
+        $select = "";
+        if($request->checkFecha == 1){
+            $select = $select."?fechaPauta as Fecha,";
+        }
+        if($request->checkTipoPauta == 1){
+            $select = $select."?tipoPauta as TipoPauta,";
+        }
+        if($request->checkMedio == 1){
+            $select = $select."123,";
+        }
+        if($request->checkPrograma == 1){
+            $select = $select."456,";
+        }
+        if($request->checkTitular == 1){
+            $select = $select."?titular as Titular,";
+        }
+        if($request->checkTexto == 1){
+            $select = $select."?texto as Texto,";
+        }
+        if($request->checkEquivalencia == 1){
+            $select = $select."?equivalencia as Equivalencia";
+        }
+        if(substr($select, -1)==","){
+            $select = substr($select, 0,(strlen($select)-1));
+        }
+        $arrayFiltrado = session()->get('arrayFiltrado');
+        $arrayPrensa = array();
+        $arrayTv = array();
+        $arrayRadio = array();
+        $arrayInternet = array();
+        foreach ($arrayFiltrado as $pauta) {
+            if($pauta['tipoPauta']=='Prensa'){
+                $arrayPrensa[] = $pauta['id'];
+            }
+            if($pauta['tipoPauta']=='Televisión'){
+                $arrayTv[] = $pauta['id'];
+            }
+            if($pauta['tipoPauta']=='Radio'){
+                $arrayRadio[] = $pauta['id'];
+            }
+            if($pauta['tipoPauta']=='Internet'){
+                $arrayInternet[] = $pauta['id'];
+            }
+        }
+
+        $selectPrensa = str_replace("?","pautasPrensa.", $select);
+        $selectTv = str_replace("?","pautasTv.", $select);
+        $selectRadio = str_replace("?","pautasRadio.", $select);
+        $selectInternet = str_replace("?","pautasInternet.", $select);
+
+        $selectPrensa = str_replace("123","mediosPrensa.nombreMedio as Medio", $selectPrensa);
+        $selectTv = str_replace("123","mediosAV.nombreMedio as Medio", $selectTv);
+        $selectRadio = str_replace("123","mediosAV.nombreMedio as Medio", $selectRadio);
+        $selectInternet = str_replace("123","mediosInternet.nombreMedio as Medio", $selectInternet);
+
+        $selectPrensa = str_replace("456","seccionesPrensa.nombreSeccion as ProgSec", $selectPrensa);
+        $selectTv = str_replace("456","programasAV.nombrePrograma as ProgSec", $selectTv);
+        $selectRadio = str_replace("456","programasAV.nombrePrograma as ProgSec", $selectRadio);
+        $selectInternet = str_replace("456,","", $selectInternet);
+
+        $resultadosPrensa = PautaPrensa::join('seccionesPrensa','pautasPrensa.seccionesPrensa_id','seccionesPrensa.id')
+                        ->join('mediosPrensa','seccionesPrensa.mediosPrensa_id','mediosPrensa.id')
+                        ->whereIn('pautasPrensa.id',$arrayPrensa)->selectRaw($selectPrensa)->get();
+
+        $resultadosTv = PautaTv::join('programasAV','pautasTv.programasAV_id','programasAV.id')
+                        ->join('mediosAV','programasAV.mediosAV_id','mediosAV.id')
+                        ->whereIn('pautasTv.id',$arrayTv)->selectRaw($selectTv)->get();
+
+        $resultadosRadio = PautaRadio::join('programasAV','pautasRadio.programasAV_id','programasAV.id')
+                        ->join('mediosAV','programasAV.mediosAV_id','mediosAV.id')
+                        ->whereIn('pautasRadio.id',$arrayRadio)->selectRaw($selectRadio)->get();
+
+        $resultadosInternet = PautaInternet::join('mediosInternet','pautasInternet.mediosInternet_id','mediosInternet.id')
+                        ->whereIn('pautasInternet.id',$arrayInternet)->selectRaw($selectInternet)->get();
+
+        return Excel::create("ExcelNoticias",function($excel) use ($resultadosPrensa,$resultadosTv,$resultadosRadio,$resultadosInternet){
+            $excel->setTitle("Title");
+            $excel->sheet("Hoja 1",function($sheet) use ($resultadosPrensa,$resultadosTv,$resultadosRadio,$resultadosInternet){
+                $sheet->fromArray($resultadosPrensa);
+                $sheet->fromArray($resultadosTv);
+                $sheet->fromArray($resultadosRadio);
+                $sheet->fromArray($resultadosInternet);
+                $sheet->row(1,function($row){
+                    $row->setBackground('#33BEFF');
+                    $row->setFontWeight('bold');
+                });
+
+            });
+        })->download("xls");
         
     }
-}
 
+    /*public function importarMediosPrensa24(){
+        $medios24 = DB::connection('mysql_24_prensa')->table('tbl_medio')
+                    ->whereIn('idtipo_medio',[1,2])
+                    ->select('idmedio as id','nombre as nombreMedio','idtipo_medio as subTipoMedio')
+                    ->get();
+
+        $arrayMedios = array();
+
+        foreach ($medios24 as $medio24) {
+            $medioPrensa = new MedioPrensa();
+            $medioPrensa->id = $medio24->id;
+            $medioPrensa->nombreMedio = $medio24->nombreMedio;
+            if($medio24->subTipoMedio == 1){
+                $medioPrensa->subTipoMedio = 'Diario';
+            }else{
+                $medioPrensa->subTipoMedio = 'Revista';
+            }
+            $medioPrensa->tipoMedios_id = 1;
+            $medioPrensa->save();
+
+            $arrayMedios[] = $medioPrensa->nombreMedio;
+        }
+
+        return response()->json($arrayMedios);
+    }
+
+    public function importarSeccionesPrensa24(){
+        $medios24 = DB::connection('mysql_24_prensa')->table('tbl_seccion')
+                    ->select('idseccion','nombre','estado')
+                    ->get();
+
+        $arrayMedios = array();
+        echo count($medios24).'</br>';
+
+        foreach ($medios24 as $medio24) {
+            $medioPrensa = new SeccionPrensa();
+            $medioPrensa->id = $medio24->idseccion;
+            $medioPrensa->nombreSeccion = $medio24->nombre;
+            $medioPrensa->estado = $medio24->estado;
+            $medioPrensa->save();
+
+            $arrayMedios[] = $medioPrensa->nombreSeccion;
+        }
+
+        return response()->json($arrayMedios);
+    }
+
+    public function importarPautasPrensa24(){
+        $pautas24 = DB::connection('mysql_24_prensa')->table('tbl_pauta_prensa')
+                    ->where('fecha','>=','2017-09-01')
+                    ->select('idpauta_prensa','fecha','pagina','idseccion','titular','idmedio','fecha_registro','codigo','estado','tipo_servicio','texto2','');
+    }*/
+
+}

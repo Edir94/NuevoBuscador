@@ -20,8 +20,8 @@
 				                		<h4>Palabras Clave</h4>
 				                	</label>
 								</div>
-								<div class="col-xs-12 col-md-offset-10">
-                                	<button type="button" class="btn-add-temas btn btn-primary btn-xs" onclick="btnAgregar(this)"><span class="glyphicon glyphicon-plus"></span></button>
+								<div class="col-xs-12">
+                                	<button type="button" class="btn-add-temas btn btn-primary btn-xs col-md-offset-11" onclick="btnAgregar(this)"><span class="glyphicon glyphicon-plus"></span></button>
                             	</div>
 							</div>
 
@@ -34,8 +34,8 @@
 									<div id="idPalabraClave" class="col-xs-5 col-sm-5 col-md-5 div-pc">
 										<input type="text" class="col-xs-12 col-sm-12 col-md-12 text-claves" name="pClave0" id="pClave0" value="">
 									</div>
-									<div class="col-xs-2 col-md-1 div-eliminar">
-			                            <button type="button" class="btn-del-temas btn btn-default btn-xs" onclick="btnEliminar(this)"><span class="glyphicon glyphicon-minus"></span></button>
+									<div class="col-xs-2 div-eliminar">
+			                            <button type="button" class="btn-del-temas btn btn-default btn-xs col-md-offset-1" onclick="btnEliminar(this)"><span class="glyphicon glyphicon-minus"></span></button>
 			                        </div>
 			                    </div>
 							</div>
