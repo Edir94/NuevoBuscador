@@ -168,8 +168,18 @@ function BuscarPautas()
      });
 
     $('#contenedorBusqueda').attr('class','panel-collapse collapse');
+    $('#iDesplegable').attr('class','glyphicon glyphicon-triangle-bottom');
     $('#FiltroRapido').show();
 }
+
+$('#desplegable').click(function(){
+    var value = $('#iDesplegable').attr('class');
+    if(value == 'glyphicon glyphicon-triangle-bottom'){
+        $('#iDesplegable').attr('class','glyphicon glyphicon-triangle-top');
+    }else{
+        $('#iDesplegable').attr('class','glyphicon glyphicon-triangle-bottom');
+    }
+});
 
 function AbrirPauta(id)
 {

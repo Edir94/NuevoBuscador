@@ -31,7 +31,7 @@ class ControllerVistas extends Controller
                     ->join('tbl_seccion','tbl_pauta_prensa.idseccion','tbl_seccion.idseccion')
                     ->leftjoin('tbl_lectoria','tbl_medio.idmedio','tbl_lectoria.idmedio')
                     ->where('tbl_pauta_prensa.idpauta_prensa','=',$id)
-                    ->select('tbl_pauta_prensa.idpauta_prensa as id','tbl_pauta_prensa.fecha as fechaPauta','tbl_pauta_prensa.tipo_servicio as tipoPauta','tbl_medio.nombre as nombreMedio','tbl_seccion.nombre as nombreSeccion','tbl_pauta_prensa.titular as titular','tbl_pauta_prensa.texto as texto','tbl_pauta_prensa.codigo as codigoImagen','tbl_medio.idtipo_medio as subTipoMedio','tbl_lectoria.lectoria as lectoria','tbl_pauta_prensa.pagina as paginas')
+                    ->select('tbl_pauta_prensa.idpauta_prensa as id','tbl_pauta_prensa.fecha as fechaPauta','tbl_pauta_prensa.tipo_servicio as tipoPauta','tbl_medio.nombre as nombreMedio','tbl_seccion.nombre as nombreSeccion','tbl_pauta_prensa.titular as titular','tbl_pauta_prensa.texto as texto','tbl_pauta_prensa.codigo as codigoImagen','tbl_medio.idtipo_medio as subTipoMedio','tbl_lectoria.lectoria as lectoria','tbl_pauta_prensa.pagina as paginas','tbl_pauta_prensa.idmedio as idMedio')
                     ->get();
 
         $pautasRecortes = DB::connection('mysql_24_prensa')->table('tbl_pauta_recorte')
@@ -52,6 +52,11 @@ class ControllerVistas extends Controller
             $i=0;
             $alto = 0;
             $ancho = 0;
+            if(strtotime($pautaPrensa->fechaPauta)==strtotime('2017-11-23')){
+                $nombreMedio = DB::connection('mysql_24_noticias')->table('medio_prensas')->where('idMedioPrensa','=',$pautaPrensa->idMedio)->value('nombreMedioPrensa');
+            }else{
+                $nombreMedio = $pautaPrensa->nombreMedio;
+            }
             foreach ($pautasRecortes as $pautaRecorte) {
                 $i++;
                 $equivalencia = $equivalencia + $pautaRecorte->equivalencia;
@@ -72,7 +77,7 @@ class ControllerVistas extends Controller
                     $rutaPDF = "http://servicios.noticiasperu.pe/medios/Recortes3/".$año."/".$mes."/".$dia."/OCRecortePDF/".$pautaPrensa->codigoImagen."_1.pdf";
                 }
             }
-            $pauta[] = ['id'=>$pautaPrensa->id,'fechaPauta'=>$fechaPauta,'tipoPauta'=>$pautaPrensa->tipoPauta,'nombreMedio'=>$pautaPrensa->nombreMedio,'titular'=>$pautaPrensa->titular,'texto'=>$pautaPrensa->texto,'rutaPDF'=>$rutaPDF,'equivalencia'=>$equivalencia,'lectoria'=>$pautaPrensa->lectoria,'nombreSeccion'=>$pautaPrensa->nombreSeccion,'alto'=>$alto,'ancho'=>$ancho,'paginas'=>$pautaPrensa->paginas];
+            $pauta[] = ['id'=>$pautaPrensa->id,'fechaPauta'=>$fechaPauta,'tipoPauta'=>$pautaPrensa->tipoPauta,'nombreMedio'=>$nombreMedio,'titular'=>$pautaPrensa->titular,'texto'=>$pautaPrensa->texto,'rutaPDF'=>$rutaPDF,'equivalencia'=>$equivalencia,'lectoria'=>$pautaPrensa->lectoria,'nombreSeccion'=>$pautaPrensa->nombreSeccion,'alto'=>$alto,'ancho'=>$ancho,'paginas'=>$pautaPrensa->paginas];
         }
 
         return view('vistas.vistaPrensa',['pautasPrensa'=>$pauta[0],'recortes'=>$recortes]);

@@ -69,7 +69,31 @@
                 <div class="collapse navbar-collapse" id="app-navbar-collapse">
                     <!-- Left Side Of Navbar -->
                     <ul class="nav navbar-nav">
-                        <li class=" active "><a href="#">Nosotros</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                                Nuestros Servicios <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li>
+                                    <a href="#">Prensa</a>
+                                </li>
+                                <li>
+                                    <a href="#">Televisión</a>
+                                </li>
+                                <li>
+                                    <a href="#">Radio</a>
+                                </li>
+                                <li>
+                                    <a href="#">Internet</a>
+                                </li>
+                                <li>
+                                    <a href="#">Análisis</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <ul class="nav navbar-nav">
+                        <li><a href="#">Nosotros</a></li>
                     </ul>
                     <ul class="nav navbar-nav">
                         <li><a href="#">Ustedes</a></li>
@@ -80,31 +104,8 @@
                     <!-- Right Side Of Navbar -->
                     <ul class="nav navbar-nav navbar-right">
                         <li><a href="#">Contáctenos</a></li>
+                        <li><a href="#" style="color: #FFFFFF;"><i class="fa fa-phone-square"></i>(511) 709-3000</a></li>
                         <!-- Authentication Links -->
-                        <!--@/if (Auth::guest())
-                            <li><a href="{/{ route('login') }}">Ingresar</a></li>
-                            <li><a href="{/{ route('register') }}">Registrarse</a></li>
-                        @/else
-                            <li class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                                    Hola, {/{ Auth::user()->name }} <span class="caret"></span>
-                                </a>
-
-                                <ul class="dropdown-menu" role="menu">
-                                    <li>
-                                        <a href="{/{ route('logout') }}"
-                                            onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
-                                            Salir
-                                        </a>
-
-                                        <form id="logout-form" action="{/{ route('logout') }}" method="POST" style="display: none;">
-                                            {/{ csrf_field() }}
-                                        </form>
-                                    </li>
-                                </ul>
-                            </li>
-                        @/endif-->
                     </ul>
                 </div>
             </div><!--container-->

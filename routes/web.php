@@ -16,8 +16,8 @@
 });*/
 
 Route::get('/', function () {
-	//return view('auth/login');
-	return view('home2');
+	return view('auth/login');
+	//return view('home2');
 	/*if(Auth::guest()){
 		return view('auth/login');
 	}else{
@@ -69,4 +69,9 @@ Route::get('claves/{id}','ControllerFavorito@mostrarPalabraClave');
 Route::get('/download','ControllerBusqueda@exportarExcel');
 Route::get('/download24','ControllerBusqueda24@exportarExcel');
 
-//Route::get('/mediosPrensa','ControllerBusqueda@importarSeccionesPrensa24');
+Route::get('/importarPrensa','ControllerBusqueda@importarPautasPrensa24');
+Route::get('/importarTv','ControllerBusqueda@importarPautasTv24');
+Route::get('/importarRadio','ControllerBusqueda@importarPautasRadio24');
+Route::get('/importarInternet','ControllerBusqueda@importarPautasInternet24');
+
+Route::get('/seccionesPrensa','ControllerBusqueda@importarSeccionesPrensa24');

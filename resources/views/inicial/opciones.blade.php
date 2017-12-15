@@ -1,6 +1,6 @@
 <div class="panel panel-default">
     <div class="panel-heading">
-    	<a href="#contenedorBusqueda" data-toggle="collapse">Buscar por:</a>
+    	<a href="#contenedorBusqueda" data-toggle="collapse" id="desplegable">Buscar por:</a><i class="glyphicon glyphicon-triangle-top" style="float: right;" id="iDesplegable" value="0"></i>
 	</div>
     <div class="panel-collapse collapse in" id="contenedorBusqueda">
 	    <div class="panel-body">

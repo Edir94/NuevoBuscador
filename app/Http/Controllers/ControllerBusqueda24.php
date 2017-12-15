@@ -103,13 +103,14 @@ class ControllerBusqueda24 extends Controller
 
     public function busqueda(){
         $fecha = date('Y-m-d');
+        //$fecha = date('2017-11-23');
 
         $pautasPrensa = DB::connection('mysql_24_prensa')->table('tbl_pauta_prensa')
                     ->join('tbl_medio','tbl_pauta_prensa.idmedio','tbl_medio.idmedio')
                     ->join('tbl_seccion','tbl_pauta_prensa.idseccion','tbl_seccion.idseccion')
                     ->where('tbl_pauta_prensa.fecha','=',$fecha)
                     ->where('tbl_pauta_prensa.estado','=',1)
-                    ->select('tbl_pauta_prensa.idpauta_prensa as id','tbl_pauta_prensa.fecha as fechaPauta','tbl_pauta_prensa.tipo_servicio as tipoPauta','tbl_medio.nombre as nombreMedio','tbl_seccion.nombre as nombreSeccion','tbl_pauta_prensa.titular as titular')
+                    ->select('tbl_pauta_prensa.idpauta_prensa as id','tbl_pauta_prensa.fecha as fechaPauta','tbl_pauta_prensa.tipo_servicio as tipoPauta','tbl_medio.nombre as nombreMedio','tbl_pauta_prensa.idmedio as idMedio','tbl_seccion.nombre as nombreSeccion','tbl_pauta_prensa.titular as titular')
                     ->get();
 
         $pautasTv = DB::connection('mysql_24')->table('pautatv')
@@ -134,7 +135,12 @@ class ControllerBusqueda24 extends Controller
 
         $dataResponse = new Collection;
         foreach ($pautasPrensa as $pautaPrensa) {
-            $dataResponse->push(['id'=>$pautaPrensa->id, 'fechaPauta'=>$pautaPrensa->fechaPauta, 'tipoPauta'=>$pautaPrensa->tipoPauta, 'nombreMedio'=>$pautaPrensa->nombreMedio, 'nombreSP'=>$pautaPrensa->nombreSeccion, 'titular'=>$pautaPrensa->titular,'valor'=>1]);
+            if(strtotime($pautaPrensa->fechaPauta)==strtotime('2017-11-23')){
+                $nombreMedio = DB::connection('mysql_24_noticias')->table('medio_prensas')->where('idMedioPrensa','=',$pautaPrensa->idMedio)->value('nombreMedioPrensa');
+            }else{
+                $nombreMedio = $pautaPrensa->nombreMedio;
+            }
+            $dataResponse->push(['id'=>$pautaPrensa->id, 'fechaPauta'=>$pautaPrensa->fechaPauta, 'tipoPauta'=>$pautaPrensa->tipoPauta, 'nombreMedio'=>$nombreMedio, 'nombreSP'=>$pautaPrensa->nombreSeccion, 'titular'=>$pautaPrensa->titular,'valor'=>1]);
         }
         foreach ($pautasTv as $pautaTv) {
             $dataResponse->push(['id'=>$pautaTv->id, 'fechaPauta'=>$pautaTv->fechaPauta, 'tipoPauta'=>$pautaTv->tipoPauta, 'nombreMedio'=>$pautaTv->nombreMedio, 'nombreSP'=>$pautaTv->nombrePrograma, 'titular'=>$pautaTv->titular,'valor'=>1]);
@@ -370,11 +376,16 @@ class ControllerBusqueda24 extends Controller
                                 $query->orWhereRaw('MATCH(tbl_pauta_prensa.texto,tbl_pauta_prensa.titular) AGAINST('.$texto.' IN BOOLEAN MODE)');
                             }
                     })
-                    ->select('tbl_pauta_prensa.idpauta_prensa as id','tbl_pauta_prensa.fecha as fechaPauta','tbl_pauta_prensa.tipo_servicio as tipoPauta','tbl_medio.nombre as nombreMedio','tbl_seccion.nombre as nombreSeccion','tbl_pauta_prensa.titular as titular')
+                    ->select('tbl_pauta_prensa.idpauta_prensa as id','tbl_pauta_prensa.fecha as fechaPauta','tbl_pauta_prensa.tipo_servicio as tipoPauta','tbl_medio.nombre as nombreMedio','tbl_pauta_prensa.idmedio as idMedio','tbl_seccion.nombre as nombreSeccion','tbl_pauta_prensa.titular as titular')
                     ->get();
 
             foreach ($pautasPrensa as $pautaPrensa) {
-                $dataResponse->push(['id'=>$pautaPrensa->id, 'fechaPauta'=>$pautaPrensa->fechaPauta, 'tipoPauta'=>$pautaPrensa->tipoPauta, 'nombreMedio'=>$pautaPrensa->nombreMedio, 'nombreSP'=>$pautaPrensa->nombreSeccion, 'titular'=>$pautaPrensa->titular,'valor'=>1]);
+                if(strtotime($pautaPrensa->fechaPauta)==strtotime('2017-11-23')){
+                    $nombreMedio = DB::connection('mysql_24_noticias')->table('medio_prensas')->where('idMedioPrensa','=',$pautaPrensa->idMedio)->value('nombreMedioPrensa');
+                }else{
+                    $nombreMedio = $pautaPrensa->nombreMedio;
+                }
+                $dataResponse->push(['id'=>$pautaPrensa->id, 'fechaPauta'=>$pautaPrensa->fechaPauta, 'tipoPauta'=>$pautaPrensa->tipoPauta, 'nombreMedio'=>$nombreMedio, 'nombreSP'=>$pautaPrensa->nombreSeccion, 'titular'=>$pautaPrensa->titular,'valor'=>1]);
             }
         }//end if
         if(!$filtroMedios || count($mediosAV)!=0){
@@ -615,7 +626,7 @@ class ControllerBusqueda24 extends Controller
             }
         }
 
-        $selectPrensa = "tbl_pauta_prensa.idpauta_prensa as idpauta, tbl_pauta_prensa.fecha as fecha,tbl_pauta_prensa.tipo_servicio as tipoPauta,tbl_medio.nombre as nombreMedio,tbl_seccion.nombre as nombreSeccion,tbl_pauta_prensa.titular as titular,tbl_pauta_prensa.texto2 as texto,tbl_pauta_prensa.equivalencia as equivalencia";
+        $selectPrensa = "tbl_pauta_prensa.idpauta_prensa as idpauta, tbl_pauta_prensa.fecha as fecha,tbl_pauta_prensa.tipo_servicio as tipoPauta,tbl_medio.nombre as nombreMedio,tbl_seccion.nombre as nombreSeccion,tbl_pauta_prensa.titular as titular,tbl_pauta_prensa.texto2 as texto,tbl_pauta_prensa.equivalencia as equivalencia,tbl_pauta_prensa.idmedio as idMedio";
         $selectTv = "pautatv.NumID as idpauta, pautatv.Fecha as fecha,pautatv.tipo_servicio as tipoPauta,medioav.Nombre as nombreMedio,programa.Nombre as nombrePrograma,pautatv.Titular as titular,pautatv.Texto as texto,pautatv.equivalencia as equivalencia";
         $selectRadio = "pautaradio.NumID as idpauta, pautaradio.Fecha as fecha,pautaradio.tipo_servicio as tipoPauta,medioav.Nombre as nombreMedio,programa.Nombre as nombrePrograma,pautaradio.Titular as titular,pautaradio.Texto as texto,pautaradio.equivalencia as equivalencia";
         $selectInternet = "pautainternetweb.NumID as idpauta, pautainternetweb.Fecha as fecha,pautainternetweb.tipo_servicio as tipoPauta,medioav.Nombre as nombreMedio,pautainternetweb.Titular as titular,pautainternetweb.Texto as texto,pautainternetweb.equivalencia as equivalencia";
@@ -649,68 +660,38 @@ class ControllerBusqueda24 extends Controller
 
         $arrayResultados = array();
         $arrayCabeceras = array();
-        //$arrayAnchos = array();
-        //if($request->checkFecha == 1){
-            $arrayCabeceras[]= "Fecha";
-        //}
-        //if($request->checkTipoPauta == 1){
-            $arrayCabeceras[]= "Tipo de Medio";
-        //}
-        //if($request->checkMedio == 1){
-            $arrayCabeceras[]= "Medio";
-        //}
-        //if($request->checkPrograma == 1){
-            $arrayCabeceras[]= "Sección/Programa";
-        //}
-        //if($request->checkTitular == 1){
-            $arrayCabeceras[]= "Titular";
-        //}
-        //if($request->checkTexto == 1){
-            $arrayCabeceras[]= "Texto";
-        //}
-        //if($request->checkEquivalencia == 1){
-            $arrayCabeceras[]= "Equivalencia";
-        //}
-        //if($request->checkLink == 1){
-            $arrayCabeceras[]= "Link";
-        //}
+        $arrayCabeceras[]= "Fecha";
+        $arrayCabeceras[]= "Tipo de Medio";
+        $arrayCabeceras[]= "Medio";
+        $arrayCabeceras[]= "Sección/Programa";
+        $arrayCabeceras[]= "Titular";
+        $arrayCabeceras[]= "Texto";
+        $arrayCabeceras[]= "Equivalencia";
+        $arrayCabeceras[]= "Link";
+        
         foreach ($resultadosPrensa as $resultado) {
             $fecha = $resultado->fecha;
             $año = substr($fecha, 0,4);
             $mes = substr($fecha, 5,2);
             $dia = substr($fecha, 8,2);
             $pauta = array();
-            //if($request->checkFecha == 1){
-                //$pauta['fecha']= '=DATE('.$año.','.$mes.','.$dia.')';
-                //$pauta['fecha']= $año.'-'.$mes.'-'.$dia;
-                $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
-            //}
-            //if($request->checkTipoPauta == 1){
-                $pauta['tipoPauta'] = $resultado->tipoPauta;
-            //}
-            //if($request->checkMedio == 1){
-                $pauta['nombreMedio'] = $resultado->nombreMedio;
-            //}
-            //if($request->checkPrograma == 1){
-                $pauta['nombrePrograma'] = $resultado->nombreSeccion;
-            //}
-            //if($request->checkTitular == 1){
-                $pauta['titular'] = $resultado->titular;
-            //}
-            //if($request->checkTexto == 1){
-                $pauta['texto'] = $resultado->texto;
-            //}
-            //if($request->checkEquivalencia == 1){
-                if($resultado->equivalencia>0){
-                    $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
-                }else{
-                    $pauta['equivalencia'] = number_format(0,2);
-                }
-            //}
-            //if($request->checkLink == 1){
-                $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaPrensa.php?idPauta='.$resultado->idpauta.'&bool=1","Abrir")';
-            //}
-
+            $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
+            $pauta['tipoPauta'] = $resultado->tipoPauta;
+            if(strtotime($pautaPrensa->fechaPauta)==strtotime('2017-11-23')){
+                $nombreMedio = DB::connection('mysql_24_noticias')->table('medio_prensas')->where('idMedioPrensa','=',$resultado->idMedio)->value('nombreMedioPrensa');
+            }else{
+                $nombreMedio = $resultado->nombreMedio;
+            }
+            $pauta['nombreMedio'] = $nombreMedio;
+            $pauta['nombrePrograma'] = $resultado->nombreSeccion;
+            $pauta['titular'] = $resultado->titular;
+            $pauta['texto'] = $resultado->texto;
+            if($resultado->equivalencia>0){
+                $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
+            }else{
+                $pauta['equivalencia'] = number_format(0,2);
+            }
+            $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaPrensa.php?idPauta='.$resultado->idpauta.'&bool=1","Abrir")';
             $arrayResultados[] = $pauta;
         }
 
@@ -720,37 +701,18 @@ class ControllerBusqueda24 extends Controller
             $mes = substr($fecha, 5,2);
             $dia = substr($fecha, 8,2);
             $pauta = array();
-            //if($request->checkFecha == 1){
-                //$pauta['fecha']= '=DATE('.$año.','.$mes.','.$dia.')';
-                //$pauta['fecha']= $año.'-'.$mes.'-'.$dia;
-                $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
-            //}
-            //if($request->checkTipoPauta == 1){
-                $pauta['tipoPauta'] = $resultado->tipoPauta;
-            //}
-            //if($request->checkMedio == 1){
-                $pauta['nombreMedio'] = $resultado->nombreMedio;
-            //}
-            //if($request->checkPrograma == 1){
-                $pauta['nombrePrograma'] = $resultado->nombrePrograma;
-            //}
-            //if($request->checkTitular == 1){
-                $pauta['titular'] = $resultado->titular;
-            //}
-            //if($request->checkTexto == 1){
-                $pauta['texto'] = $resultado->texto;
-            //}
-            //if($request->checkEquivalencia == 1){
-                if($resultado->equivalencia>0){
-                    $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
-                }else{
-                    $pauta['equivalencia'] = number_format(0,2);
-                }
-            //}
-            //if($request->checkLink == 1){
-                $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaPrensa.php?idPauta='.$resultado->idpauta.'&bool=1","Abrir")';
-            //}
-
+            $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
+            $pauta['tipoPauta'] = $resultado->tipoPauta;
+            $pauta['nombreMedio'] = $resultado->nombreMedio;
+            $pauta['nombrePrograma'] = $resultado->nombrePrograma;
+            $pauta['titular'] = $resultado->titular;
+            $pauta['texto'] = $resultado->texto;
+            if($resultado->equivalencia>0){
+                $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
+            }else{
+                $pauta['equivalencia'] = number_format(0,2);
+            }
+            $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaPrensa.php?idPauta='.$resultado->idpauta.'&bool=1","Abrir")';
             $arrayResultados[] = $pauta;
         }
         foreach ($resultadosRadio as $resultado) {
@@ -759,37 +721,18 @@ class ControllerBusqueda24 extends Controller
             $mes = substr($fecha, 5,2);
             $dia = substr($fecha, 8,2);
             $pauta = array();
-            //if($request->checkFecha == 1){
-                //$pauta['fecha']= '=DATE('.$año.','.$mes.','.$dia.')';
-                $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
-                //$pauta['fecha']= $año.'-'.$mes.'-'.$dia;
-            //}
-            //if($request->checkTipoPauta == 1){
-                $pauta['tipoPauta'] = $resultado->tipoPauta;
-            //}
-            //if($request->checkMedio == 1){
-                $pauta['nombreMedio'] = $resultado->nombreMedio;
-            //}
-            //if($request->checkPrograma == 1){
-                $pauta['nombrePrograma'] = $resultado->nombrePrograma;
-            //}
-            //if($request->checkTitular == 1){
-                $pauta['titular'] = $resultado->titular;
-            //}
-            //if($request->checkTexto == 1){
-                $pauta['texto'] = $resultado->texto;
-            //}
-            //if($request->checkEquivalencia == 1){
-                if($resultado->equivalencia>0){
-                    $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
-                }else{
-                    $pauta['equivalencia'] = number_format(0,2);
-                }
-            //}
-            //if($request->checkLink == 1){
-                $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaPrensa.php?idPauta='.$resultado->idpauta.'&bool=1","Abrir")';
-            //}
-
+            $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
+            $pauta['tipoPauta'] = $resultado->tipoPauta;
+            $pauta['nombreMedio'] = $resultado->nombreMedio;
+            $pauta['nombrePrograma'] = $resultado->nombrePrograma;
+            $pauta['titular'] = $resultado->titular;
+            $pauta['texto'] = $resultado->texto;
+            if($resultado->equivalencia>0){
+                $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
+            }else{
+                $pauta['equivalencia'] = number_format(0,2);
+            }
+            $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaPrensa.php?idPauta='.$resultado->idpauta.'&bool=1","Abrir")';
             $arrayResultados[] = $pauta;
         }
         foreach ($resultadosInternet as $resultado) {
@@ -798,37 +741,18 @@ class ControllerBusqueda24 extends Controller
             $mes = substr($fecha, 5,2);
             $dia = substr($fecha, 8,2);
             $pauta = array();
-            //if($request->checkFecha == 1){
-                //$pauta['fecha']= '=DATE('.$año.','.$mes.','.$dia.')';
-                $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
-                //$pauta['fecha']= $año.'-'.$mes.'-'.$dia;
-            //}
-            //if($request->checkTipoPauta == 1){
-                $pauta['tipoPauta'] = $resultado->tipoPauta;
-            //}
-            //if($request->checkMedio == 1){
-                $pauta['nombreMedio'] = $resultado->nombreMedio;
-            //}
-            //if($request->checkPrograma == 1){
-                $pauta['nombrePrograma'] = "";
-            //}
-            //if($request->checkTitular == 1){
-                $pauta['titular'] = $resultado->titular;
-            //}
-            //if($request->checkTexto == 1){
-                $pauta['texto'] = $resultado->texto;
-            //}
-            //if($request->checkEquivalencia == 1){
-                if($resultado->equivalencia>0){
-                    $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
-                }else{
-                    $pauta['equivalencia'] = number_format(0,2);
-                }
-            //}
-            //if($request->checkLink == 1){
-                $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaInternet.php?idPauta='.$resultado->idpauta.'&bool=0","Abrir")';
-            //}
-
+            $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
+            $pauta['tipoPauta'] = $resultado->tipoPauta;
+            $pauta['nombreMedio'] = $resultado->nombreMedio;
+            $pauta['nombrePrograma'] = "";
+            $pauta['titular'] = $resultado->titular;
+            $pauta['texto'] = $resultado->texto;
+            if($resultado->equivalencia>0){
+                $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
+            }else{
+                $pauta['equivalencia'] = number_format(0,2);
+            }
+            $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaInternet.php?idPauta='.$resultado->idpauta.'&bool=0","Abrir")';
             $arrayResultados[] = $pauta;
         }
 
@@ -836,7 +760,6 @@ class ControllerBusqueda24 extends Controller
             $excel->setTitle("Title");
             $excel->sheet("Hoja 1",function($sheet) use ($arrayResultados,$arrayCabeceras){
                 $sheet->fromArray($arrayResultados,null,"A2",null,false);
-                //$sheet->loadView('inicial.exportarExcel')->with('arrayResultados',$arrayResultados);
                 $sheet->row(1,$arrayCabeceras);
                 $sheet->row(1,function($row){
                     $row->setBackground('#33BEFF');
@@ -849,18 +772,6 @@ class ControllerBusqueda24 extends Controller
                 });
             });
         })->download("xls");
-        
-    }
-
-    public function importarTv24(){
-
-    }
-
-    public function importarRadio24(){
-
-    }
-
-    public function importarInternet24(){
         
     }
 

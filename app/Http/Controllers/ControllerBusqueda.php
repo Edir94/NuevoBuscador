@@ -18,6 +18,7 @@ use App\MedioInternet;
 use App\SeccionPrensa;
 
 use App\PalabraClave;
+use App\PautaRecorte;
 use Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use DB;
@@ -645,6 +646,10 @@ class ControllerBusqueda extends Controller
         
     }
 
+    public function cambiarValorPauta(Request $request){
+
+    }
+
     /*public function importarMediosPrensa24(){
         $medios24 = DB::connection('mysql_24_prensa')->table('tbl_medio')
                     ->whereIn('idtipo_medio',[1,2])
@@ -669,7 +674,7 @@ class ControllerBusqueda extends Controller
         }
 
         return response()->json($arrayMedios);
-    }
+    }*/
 
     public function importarSeccionesPrensa24(){
         $medios24 = DB::connection('mysql_24_prensa')->table('tbl_seccion')
@@ -680,22 +685,196 @@ class ControllerBusqueda extends Controller
         echo count($medios24).'</br>';
 
         foreach ($medios24 as $medio24) {
-            $medioPrensa = new SeccionPrensa();
-            $medioPrensa->id = $medio24->idseccion;
-            $medioPrensa->nombreSeccion = $medio24->nombre;
-            $medioPrensa->estado = $medio24->estado;
-            $medioPrensa->save();
+            $existe = SeccionPrensa::find($medio24->idseccion);
+            if($existe==null){
+                $medioPrensa = new SeccionPrensa();
+                $medioPrensa->id = $medio24->idseccion;
+                $medioPrensa->nombreSeccion = $medio24->nombre;
+                $medioPrensa->estado = $medio24->estado;
+                $medioPrensa->save();
 
-            $arrayMedios[] = $medioPrensa->nombreSeccion;
+                $arrayMedios[] = $medioPrensa->nombreSeccion;
+            }
+            
         }
 
         return response()->json($arrayMedios);
     }
 
     public function importarPautasPrensa24(){
+        $fechaActual = date('Y-m-d');
+        //$fechaActual = '2017-10-04';
+        $fechaInicio = '2017-12-12';
+        //importacion dia a dia
         $pautas24 = DB::connection('mysql_24_prensa')->table('tbl_pauta_prensa')
-                    ->where('fecha','>=','2017-09-01')
-                    ->select('idpauta_prensa','fecha','pagina','idseccion','titular','idmedio','fecha_registro','codigo','estado','tipo_servicio','texto2','');
-    }*/
+                    ->whereBetween('fecha',[$fechaInicio,$fechaActual])
+                    ->select('idpauta_prensa','fecha','pagina','idseccion','titular','idmedio','fecha_registro','codigo','estado','tipo_servicio','texto2','equivalencia')
+                    ->get();
+
+        foreach ($pautas24 as $pauta) {
+            try{
+                $existe = PautaPrensa::find($pauta->idpauta_prensa);
+                if($existe == null){
+                    $pautaNueva = new PautaPrensa();
+                    $pautaNueva->id = $pauta->idpauta_prensa;
+                    $pautaNueva->titular = $pauta->titular;
+                    $pautaNueva->texto = $pauta->texto2;
+                    $pautaNueva->fechaPauta = $pauta->fecha;
+                    $pautaNueva->paginas = $pauta->pagina;
+                    $pautaNueva->fechaRegistro = $pauta->fecha_registro;
+                    $pautaNueva->tipoPauta = $pauta->tipo_servicio;
+                    //$pautaNueva->equivalencia = $pauta->equivalencia;
+                    $pautaNueva->estado = $pauta->estado;
+                    $pautaNueva->mediosPrensa_id = $pauta->idmedio;
+                    $pautaNueva->seccionesPrensa_id = $pauta->idseccion;
+                    $pautaNueva->save();
+
+                    $recortes24 = DB::connection('mysql_24_prensa')->table('tbl_pauta_recorte')
+                            ->where('idpauta_servicio','=',$pautaNueva->id)
+                            ->select('idpauta_servicio','alto','ancho','codigo','equivalencia')
+                            ->get();
+
+                    $equivalencia = 0;
+                    $codigo = $pauta->codigo;
+                    $fecha = $pauta->fecha;
+                    $año = substr($fecha, 0,4);
+                    $mes = substr($fecha, 5,2);
+                    $dia = substr($fecha, 8,2);
+
+                    foreach ($recortes24 as $recorte) {
+                        $recorteNuevo = new PautaRecorte();
+                        $recorteNuevo->pautasPrensa_idPauta = $recorte->idpauta_servicio;
+                        $recorteNuevo->alto = $recorte->alto;
+                        $recorteNuevo->ancho = $recorte->ancho;
+                        $equivalencia = $equivalencia + $recorte->equivalencia;
+                        $recorteNuevo->rutaImagen = "http://servicios.noticiasperu.pe/medios/Recortes/".$año."/".$mes."/".$dia."/".$codigo."_".$recorte->codigo.".jpg";
+                        $recorteNuevo->save();
+                    }
+
+                    $pautaNueva->equivalencia = $equivalencia;
+                    $pautaNueva->save();
+                }
+            }catch(\Exception $e){
+                echo $pauta->idpauta_prensa.'</br>';
+                echo substr($e, 0,250).'</br>';
+            }
+        }
+
+
+        return response()->json("Terminado");
+    }
+
+    public function importarPautasTv24(){
+        $fechaActual = date('Y-m-d');
+        $fechaInicio = '2017-10-01';
+
+        $pautas24 = DB::connection('mysql_24')->table('pautatv')
+                    ->whereBetween('Fecha',[$fechaInicio,$fechaActual])
+                    ->select('NumID','Titular','Texto','Fecha','Hora','Duracion','equivalencia','FechaRegistro','tipo_servicio','Programa')
+                    ->get();
+
+        foreach ($pautas24 as $pauta) {
+            try{
+                $existe = PautaTv::find($pauta->NumID);
+                if($existe == null){
+                    $pautatv = new PautaTv();
+                    $pautatv->id = $pauta->NumID;
+                    $pautatv->titular = $pauta->Titular;
+                    $pautatv->texto = $pauta->Texto;
+                    $pautatv->fechaPauta = $pauta->Fecha;
+                    $pautatv->horaPauta = $pauta->Hora;
+                    $pautatv->duracion = $pauta->Duracion;
+                    $pautatv->equivalencia = $pauta->equivalencia;
+                    $pautatv->fechaRegistro = $pauta->FechaRegistro;
+                    $pautatv->tipoPauta = $pauta->tipo_servicio;
+                    $pautatv->programasAV_id = $pauta->Programa;
+                    $fecha = $pauta->Fecha;
+                    $año = substr($fecha, 0,4);
+                    $mes = substr($fecha, 5,2);
+                    $dia = substr($fecha, 8,2);
+                    $pautatv->rutaVideo = "http://servicios.noticiasperu.pe/medios/tv/mp4_9/".$año."/".$mes."/".$dia."/".$pauta->NumID.".mp4";
+                    $pautatv->save();
+                }
+            }catch(\Exception $e){
+                echo $pauta->NumID.'</br>';
+                echo substr($e, 0,250).'</br>';
+            }
+        }
+    }
+
+    public function importarPautasRadio24(){
+        $fechaActual = date('Y-m-d');
+        $fechaInicio = '2017-10-01';
+
+        $pautas24 = DB::connection('mysql_24')->table('pautaradio')
+                    ->whereBetween('Fecha',[$fechaInicio,$fechaActual])
+                    ->select('NumID','Titular','Texto','Fecha','Hora','Duracion','equivalencia','FechaRegistro','tipo_servicio','Programa')
+                    ->get();
+
+        foreach ($pautas24 as $pauta) {
+            try{
+                $existe = PautaRadio::find($pauta->NumID);
+                if($existe == null){
+                    $pautaradio = new PautaRadio();
+                    $pautaradio->id = $pauta->NumID;
+                    $pautaradio->titular = $pauta->Titular;
+                    $pautaradio->texto = $pauta->Texto;
+                    $pautaradio->fechaPauta = $pauta->Fecha;
+                    $pautaradio->horaPauta = $pauta->Hora;
+                    $pautaradio->duracion = $pauta->Duracion;
+                    $pautaradio->equivalencia = $pauta->equivalencia;
+                    $pautaradio->fechaRegistro = $pauta->FechaRegistro;
+                    $pautaradio->tipoPauta = $pauta->tipo_servicio;
+                    $pautaradio->programasAV_id = $pauta->Programa;
+                    $fecha = $pauta->Fecha;
+                    $año = substr($fecha, 0,4);
+                    $mes = substr($fecha, 5,2);
+                    $dia = substr($fecha, 8,2);
+                    $pautaradio->rutaAudio = "http://servicios.noticiasperu.pe/medios/radio/".$año."/".$mes."/".$dia."/".$pauta->NumID.".mp3";
+                    $pautaradio->save();
+                }
+            }catch(\Exception $e){
+                echo $pauta->NumID.'</br>';
+                echo substr($e, 0,250).'</br>';
+            }
+        }
+    }
+
+    public function importarPautasInternet24(){
+        $fechaActual = date('Y-m-d');
+        $fechaInicio = '2017-10-01';
+
+        $pautas24 = DB::connection('mysql_24')->table('pautainternetweb')
+                    ->where('Fecha',[$fechaInicio,$fechaActual])
+                    ->select('NumID','Titular','Texto','Fecha','equivalencia','FechaRegistro','tipo_servicio','Ruta','Medio')
+                    ->get();
+
+        foreach ($pautas24 as $pauta) {
+            try{
+                $existe = PautaInternet::find($pauta->NumID);
+                if($existe == null){
+                    $pautainternet = new PautaInternet();
+                    $pautainternet->id = $pauta->NumID;
+                    $pautainternet->titular = $pauta->Titular;
+                    $pautainternet->texto = $pauta->Texto;
+                    $pautainternet->fechaPauta = $pauta->Fecha;
+                    $pautainternet->equivalencia = $pauta->equivalencia;
+                    $pautainternet->fechaRegistro = $pauta->FechaRegistro;
+                    $pautainternet->tipoPauta = $pauta->tipo_servicio;
+                    $pautainternet->mediosInternet_id = $pauta->Medio;
+                    $pautainternet->rutaWeb = $pauta->Ruta;
+                    $fecha = $pauta->Fecha;
+                    $año = substr($fecha, 0,4);
+                    $mes = substr($fecha, 5,2);
+                    $dia = substr($fecha, 8,2);
+                    $pautainternet->rutaImagen = "http://servicios.noticiasperu.pe/medios/internet/".$año."/".$mes."/".$dia."/".base64_encode($pauta->NumID.'-'.$pauta->FechaRegistro).".jpg";
+                    $pautainternet->save();
+                }
+            }catch(\Exception $e){
+                echo $pauta->NumID.'</br>';
+                echo substr($e, 0,250).'</br>';
+            }
+        }
+    }
 
 }

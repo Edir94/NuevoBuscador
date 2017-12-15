@@ -4,8 +4,8 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class PautaTv extends Model
+class PautaRecorte extends Model
 {
-    protected $table = 'pautasTv';
+    protected $table = 'pautasPrensaRecorte';
     public $timestamps = false;
 }
