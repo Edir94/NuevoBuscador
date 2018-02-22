@@ -51,7 +51,7 @@
                     <!--{/!!Form::label('valorizado','Valor (US$): ',['class'=>'','id'=>'valorizado'])!!}-->
                 </div>
                 <div class="col-xs-12 col-sm-12 col-md-12" id="imagenPauta" align="center">
-                    <img src="{{ $pautasInternet['rutaImagen'] }}">
+                    <img src="{{ $pautasInternet['rutaImagen'] }}" width="80%" class="img-responsive">
                 </div>
             </div>
         </div><!-- /. panel -->

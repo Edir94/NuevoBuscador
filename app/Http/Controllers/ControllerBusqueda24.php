@@ -169,7 +169,7 @@ class ControllerBusqueda24 extends Controller
                 $id = $dataResponse['id'];
                 $tipoPauta = $dataResponse['tipoPauta'];
                 return '<div align="center">
-                            <input type="checkbox" name="checkPauta" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true" onclick="cambiarValorPauta(this);">
+                            <input type="checkbox" name="checkPauta" class="checkitem" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true" onclick="cambiarValorPauta(this);">
                         </div>';
             })
             ->editColumn('titular','<span title="{{$titular}}" data-toogle="tooltip" data-placement="top">{{substr($titular,0,30)}}...</span>')
@@ -482,7 +482,7 @@ class ControllerBusqueda24 extends Controller
                 $id = $dataResponse['id'];
                 $tipoPauta = $dataResponse['tipoPauta'];
                 return '<div align="center">
-                            <input type="checkbox" name="checkPauta" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true" onclick="cambiarValorPauta(this);">
+                            <input type="checkbox" name="checkPauta" class="checkitem" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true" onclick="cambiarValorPauta(this);">
                         </div>';
             })
             ->editColumn('titular','<span title="{{$titular}}" data-toogle="tooltip" data-placement="top">{{substr($titular,0,30)}}...</span>')
@@ -677,7 +677,7 @@ class ControllerBusqueda24 extends Controller
             $pauta = array();
             $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
             $pauta['tipoPauta'] = $resultado->tipoPauta;
-            if(strtotime($pautaPrensa->fechaPauta)==strtotime('2017-11-23')){
+            if(strtotime($resultado->fechaPauta)==strtotime('2017-11-23')){
                 $nombreMedio = DB::connection('mysql_24_noticias')->table('medio_prensas')->where('idMedioPrensa','=',$resultado->idMedio)->value('nombreMedioPrensa');
             }else{
                 $nombreMedio = $resultado->nombreMedio;
@@ -775,108 +775,8 @@ class ControllerBusqueda24 extends Controller
         
     }
 
-/*
-    public function dataMedioAV(){
-
-        $medios = DB::connection('mysql_24')->table('medioav')
-                        ->whereIn('Tipo',[2,3])
-                        ->select('NumID','Nombre','Tipo')
-                        ->distinct()
-                        ->get();
-        
-        echo count($medios)."<br>";                
-        foreach ($medios as $medios) {
-
-            echo $medios->NumID." ".$medios->Nombre." ".$medios->Tipo."<br>"; 
-
-        }
-               
-        foreach ($medios as $medio) {
-            
-            $medioAV = new MedioAV();
-
-            $medioAV->id = $medio->NumID;
-            $medioAV->nombreMedio = $medio->Nombre;
-            $medioAV->tipoMedios_id = $medio->Tipo;
-
-            $medioAV->save();
-
-        }      
-
-        return response()->json("ok");
+    public function cambiarValorPauta(Request $request){
+        $arrayFiltrado = session()->get('arrayFiltrado');
     }
-
-*/
-
-/*
-    public function dataInternet(){
-
-        $medios = DB::connection('mysql_24')->table('medioav')
-                        ->where('Tipo','=',4)
-                        ->select('NumID','Nombre','Tipo')
-                        ->distinct()
-                        ->get();
-                  
-        echo count($medios)."<br>";                
-        foreach ($medios as $medios) {
-            echo $medios->NumID." ".$medios->Nombre." ".$medios->Tipo."<br>"; 
-
-        }
-         
-        foreach ($medios as $medio) {
-            
-            $medioInternet = new MedioInternet();
-
-            $medioInternet->id = $medio->NumID;
-            $medioInternet->nombreMedio = $medio->Nombre;
-            $medioInternet->tipoMedios_id = $medio->Tipo;
-
-            $medioInternet->save();
-
-        }    
-
-        return response()->json("ok");
-
-    }    
-
-*/
-
- /*   
-    public function dataPrograma(){
-
-        $programa = DB::connection('mysql_24')->table('programa')
-                        ->select('NumID','Nombre','Medio')
-                        ->distinct()
-                        ->get();
-         
-        echo count($programa)."<br>";                
-        foreach ($programa as $programa) {
-            echo $programa->NumID." ".$programa->Nombre." ".$programa->Medio."<br>"; 
-
-        }
-
-        foreach ($programa as $programa) {
-
-            $medio = MedioAV::where('id','=',$programa->Medio)->get();
-
-
-            if(count($medio)!=0){
-
-                $programaAV = new ProgramaAV();
-
-                $programaAV->id = $programa->NumID;
-                $programaAV->nombrePrograma = $programa->Nombre;
-                $programaAV->mediosAV_id = $programa->Medio;
-
-                $programaAV->save();
-            }
-
-        }    
-
-        return response()->json("ok");
-
-
-    }  
-*/
     
 }

@@ -16,13 +16,13 @@
 });*/
 
 Route::get('/', function () {
-	return view('auth/login');
+	//return view('auth/login');
 	//return view('home2');
-	/*if(Auth::guest()){
+	if(Auth::guest()){
 		return view('auth/login');
 	}else{
 		return view('home');
-	}*/
+	}
 });
 
 Auth::routes();
@@ -60,18 +60,32 @@ Route::get('/vistaInternet/{id}','ControllerVistas@indexInternet');
 
 //Favorito 
 
+Route::post('/buscarxPC','ControllerFavorito@buscarxPC');
+Route::post('/buscarxPeriodo','ControllerFavorito@buscarxPeriodo');
+Route::get('info','ControllerFavorito@store');
 //Route::resource('/favoritos','ControllerFavorito');
-Route::get('temas','ControllerFavorito@mostrarTema');
-Route::get('claves/{id}','ControllerFavorito@mostrarPalabraClave');
+//Route::get('temas','ControllerFavorito@mostrarTema');
+//Route::get('claves/{id}','ControllerFavorito@mostrarPalabraClave');
 
 //Herramientas
 
 Route::get('/download','ControllerBusqueda@exportarExcel');
 Route::get('/download24','ControllerBusqueda24@exportarExcel');
+Route::post('/cambiarvalorpauta','ControllerBusqueda@cambiarValorPauta');
+Route::post('/cambiarvalortodo','ControllerBusqueda@cambiarValorTodo');
+
+//Importar Data de la 24
 
 Route::get('/importarPrensa','ControllerBusqueda@importarPautasPrensa24');
 Route::get('/importarTv','ControllerBusqueda@importarPautasTv24');
 Route::get('/importarRadio','ControllerBusqueda@importarPautasRadio24');
 Route::get('/importarInternet','ControllerBusqueda@importarPautasInternet24');
 
-Route::get('/seccionesPrensa','ControllerBusqueda@importarSeccionesPrensa24');
+Route::get('/mediosInternet24','ControllerBusqueda@importarMediosInternet');
+Route::get('/mediosAV24','ControllerBusqueda@importarMediosAudioVisuales');
+Route::get('/programasAV24','ControllerBusqueda@importarProgramasAudioVisuales');
+Route::get('/mediosPrensa24','ControllerBusqueda@importarMediosPrensa');
+Route::get('/seccionesPrensa24','ControllerBusqueda@importarSeccionesPrensa');
+
+
+Route::get('/corregirRecortes','ControllerBusqueda@corregirRecortes');

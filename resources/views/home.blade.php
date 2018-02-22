@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <div class="row">
+<div class="container-fluid" style="justify-content: center; display: flex;">
+    <div class="col-xs-10">
         <div class="col-xs-3">
             @include('inicial.opciones')
         </div>

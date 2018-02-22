@@ -1,109 +1,146 @@
-$(window).on('load',function(){
-	cargarfavorito();
-	estilo();
+$('.palabraClave').click(function(){
+	$('#contenedorPautas').empty();
+	var periodo = $('#selectPeriodo').val();
+	var fechaInicio = $('#fechaInicioFavoritos').val();
+	var fechaFin = $('#fechaFinFavoritos').val();
+	var token = $('#token').val();
+	var palabraClave = $(this).text();
+	//alert($(this).text());
+	$.ajax({
+		type: "POST",
+        url: "/buscarxPC",
+        headers:{'X-CSRF-TOKEN': token},
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            palabraClave:palabraClave,
+            periodo:periodo,
+            fechaInicio:fechaInicio,
+            fechaFin:fechaFin
+        },
+        success: function(datos) {
+        	//console.log(datos.length);
+        	var i = 0;
+        	while(i<datos.length){
+        		var pauta = datos[i];
+        		var texto = pauta['texto'];
+        		if(texto.length>400){
+        			texto = texto.substring(0,399)+"...";
+        		}
+        		if(pauta['nombrePrograma']==''){
+        			medioprograma = pauta['nombreMedio'];
+        		}else{
+        			medioprograma = pauta['nombreMedio']+' / '+pauta['nombrePrograma'];
+        		}
+        		$('#contenedorPautas').append('<div class="row pauta" style="background-color: #D8D8D8; margin: 10px;">'+
+	            				'<div class="checkPauta" style="float: left; width: 2%">'+
+	            					'<input type="checkbox" name="checkPauta">'+
+	            				'</div>'+
+	            				'<div class="dataPauta" style="float: left; margin-left: 5px; margin-right: 5px; width: 92%">'+
+	            					'<div>'+
+			            				'<a href="#"><b style="color: blue;"><span>'+pauta['titular']+'</span></b></a>'+
+			            			'</div>'+
+			            			'<div style="text-align: justify;">'+
+			            				'<span>'+texto+'</span>'+
+			            			'</div>'+
+			            			'<div>'+
+			            				'<b><em><span>'+medioprograma+'</span></em></b>'+
+			            			'</div>'+
+	            				'</div>'+
+	            				'<div class="opcionTipo" style="float: right; text-align: center; width: 1%; margin-left: 5px; margin-right: 10px;">'+
+	            					'<div class="row">'+
+		            					'<button class="btn-xs" style="width: 100%;">+</button>'+
+	            					'</div>'+
+	            					'<div class="row">'+
+	            						'<button class="btn-xs" style="width: 100%;">=</button>'+
+	            					'</div>'+
+	            					'<div class="row">'+
+	            						'<button class="btn-xs" style="width: 100%;">-</button>'+
+	            					'</div>'+
+	            				'</div>'+
+            				'</div>');
+
+        		i++;
+        	}
+        	$("#cabeceraPautas").text(palabraClave);
+        	$("#hayClave").val(1);
+        }
+	});
 });
 
+$("#selectPeriodo").change(function(){
+	$('#contenedorPautas').empty();
+	var periodo = $(this).val();
+	var fechaInicio = $('#fechaInicioFavoritos').val();
+	var fechaFin = $('#fechaFinFavoritos').val();
+	var token = $('#token').val();
+	var palabraClave = $('#cabeceraPautas').text();
+	var hayClave = $('#hayClave').val();
+	var ruta = "/buscarxPC";
+	if(hayClave==0){
+		ruta = "/buscarxPeriodo";
+	}
+	$.ajax({
+		type: "POST",
+        url: ruta,
+        headers:{'X-CSRF-TOKEN': token},
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            palabraClave:palabraClave,
+            periodo:periodo,
+            fechaInicio:fechaInicio,
+            fechaFin:fechaFin
+        },
+        success: function(datos) {
+        	//console.log(datos.length);
+        	var i = 0;
+        	while(i<datos.length){
+        		var pauta = datos[i];
+        		var texto = pauta['texto'];
+        		if(texto.length>400){
+        			texto = texto.substring(0,399)+"...";
+        		}
+        		if(pauta['nombrePrograma']==''){
+        			medioprograma = pauta['nombreMedio'];
+        		}else{
+        			medioprograma = pauta['nombreMedio']+' / '+pauta['nombrePrograma'];
+        		}
+        		$('#contenedorPautas').append('<div class="row pauta" style="background-color: #D8D8D8; margin: 10px;">'+
+	            				'<div class="checkPauta" style="float: left; width: 2%">'+
+	            					'<input type="checkbox" name="checkPauta">'+
+	            				'</div>'+
+	            				'<div class="dataPauta" style="float: left; margin-left: 5px; margin-right: 5px; width: 92%">'+
+	            					'<div>'+
+			            				'<a href="#"><b style="color: blue;"><span>'+pauta['titular']+'</span></b></a>'+
+			            			'</div>'+
+			            			'<div style="text-align: justify;">'+
+			            				'<span>'+texto+'</span>'+
+			            			'</div>'+
+			            			'<div>'+
+			            				'<b><em><span>'+pauta['tipoPauta']+' - '+medioprograma+'</span></em></b>'+
+			            			'</div>'+
+	            				'</div>'+
+	            				'<div class="opcionTipo" style="float: right; text-align: center; width: 1%; margin-left: 5px; margin-right: 10px;">'+
+	            					'<div class="row">'+
+		            					'<button class="btn-xs" style="width: 100%;">+</button>'+
+	            					'</div>'+
+	            					'<div class="row">'+
+	            						'<button class="btn-xs" style="width: 100%;">=</button>'+
+	            					'</div>'+
+	            					'<div class="row">'+
+	            						'<button class="btn-xs" style="width: 100%;">-</button>'+
+	            					'</div>'+
+	            				'</div>'+
+            				'</div>');
 
-//document.write(cargarfavorito());
-
-function cargarfavorito(){
-	  var route = 'temas';
-
-	  $.get(route,function(data){
-
-   		$.each(data,function(index,value){
-
-   			$('#contenedor2').append('<div class="panel panel-default"><div class="panel-heading"><h4 class="panel-title"><a href="#contenedorPalabras'+value.idTema+'" data-toggle="collapse" id="tema'+value.idTema+'">'+value.nombreTema+'</a></h4></div><div id="contenedorPalabras'+value.idTema+'" class="panel-collapse collapse"></div></div>');
-   			
-   			cargarPalabrasClaves(value.idTema);
-
-   			//$.get(route.function);
-
-	    });
-	    
-	  });
-}
-
-
-function cargarPalabrasClaves(id){
-
-	var contenedor3 = id;
-
-	var route = 'claves/'+id;
-
-   	$.get(route,function(data){
-
-		$.each(data,function(index,value){
-			//alert(contenedor3);
-			$('#contenedorPalabras'+contenedor3).append('<div class="panel-body"><div class="col-xs-12"><div class="col-xs-6"><label id="palabra'+value.id+'">'+value.palabraClave+'</label></div><div class="col-xs-6" align="right"><span class="badge">21</span></div></div></div>');
-		});   				
-   	});
-
-}
-
-
-// --- TEMAS --- //
-
-function estilo(){
-
-	$('.text-temas').tokenfield({
-	    limit:1,
-	    showAutocompleteOnFocus: true
-	  });
-	$('.text-temas').on('tokenfield:createtoken', function (event) {
-	    var existingTokens = $(this).tokenfield('getTokens');
-	    $.each(existingTokens, function(index, token) {
-	        if (token.value === event.attrs.value)
-	            event.preventDefault();
-	    });
+        		i++;
+        	}
+        }
 	});
+})
 
-	// --- TEMAS --- //
-
-	$('.text-claves').tokenfield({
-	    showAutocompleteOnFocus: true
-	  });
-	$('.text-claves').on('tokenfield:createtoken', function (event) {
-	    var existingTokens = $(this).tokenfield('getTokens');
-	    $.each(existingTokens, function(index, token) {
-	        if (token.value === event.attrs.value)
-	            event.preventDefault();
-	    });
-	});
-
-
-}
-
-
-
-
-$('#btnAgregarFvorito').click(function(){
-	 var tema = $('#tema1').val();
-	 var palabraClave = $('#pClave1').val();
-
-	 if(tema != "" && palabraClave != ""){
-	 	console.log(tema);
-	 	console.log(palabraClave);
-	 }else{
-	 	console.log("malooo");
-	 }
-
-});
-
-/*
-$('#btnAgregar').click(function(){
-	$('#idFavorito').append('<div class="col-xs-12"><div id="idTema" class="col-xs-5 col-sm-5 col-md-5""><input type="text" class="col-xs-12 col-sm-12 col-md-12" name="tema1" id="tema1"  value=""></div><div id="idPalabraClave" class="col-xs-5 col-sm-5 col-md-5""><input type="text" class="col-xs-12 col-sm-12 col-md-12" name="pClave1" id="pClave1" value=""></div><div class="col-xs-2 col-md-1"><button type="button" class="btn-del-temas btn btn-default btn-xs" id="btnEliminar"><span class="glyphicon glyphicon-minus"></span></button></div></div>');
-});*/
-
-function btnAgregar(obj){
-	var valor = $('#idFavorito > .palabraClaves > .div-eliminar').length;
-	$('#idFavorito').append('<div class="item form-group col-xs-12 palabraClaves"><div id="idTema" class="col-xs-5 col-sm-5 col-md-5"><input type="text" class="col-xs-12 col-sm-12 col-md-12 text-temas" name="tema'+valor+'" id="tema'+valor+'"  value=""></div><div id="idPalabraClave" class="col-xs-5 col-sm-5 col-md-5""><input type="text" class="col-xs-12 col-sm-12 col-md-12 text-claves" name="pClave'+valor+'" id="pClave'+valor+'" value=""></div><div class="col-xs-2"><button type="button" class="btn-del-temas btn btn-default btn-xs col-md-offset-1" onclick="btnEliminar(this)"><span class="glyphicon glyphicon-minus"></span></button></div></div>');
-	//alert(valor);
-	estilo();
-
-}
-
-function btnEliminar(obj){
-
-	$(obj).parent().parent().remove();
+function AbrirPautaFavoritos(tipoMedio, idPauta){
+    var ruta = "/vista"+tipoMedio+"/"+idPauta;
+    window.open(ruta);
 }

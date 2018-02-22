@@ -26,19 +26,31 @@ class ControllerVistas extends Controller
                     ->select('pautasPrensa.id','pautasPrensa.fechaPauta','pautasPrensa.tipoPauta','mediosPrensa.nombreMedio','seccionesPrensa.nombreSeccion','pautasPrensa.titular','pautasPrensa.texto')
                     ->get();*/
 
-        $pautasPrensa = DB::connection('mysql_24_prensa')->table('tbl_pauta_prensa')
+        $pautasPrensa = DB::connection('web_noticias_prensa_1')->table('tbl_pauta_prensa')
                     ->join('tbl_medio','tbl_pauta_prensa.idmedio','tbl_medio.idmedio')
                     ->join('tbl_seccion','tbl_pauta_prensa.idseccion','tbl_seccion.idseccion')
                     ->leftjoin('tbl_lectoria','tbl_medio.idmedio','tbl_lectoria.idmedio')
                     ->where('tbl_pauta_prensa.idpauta_prensa','=',$id)
-                    ->select('tbl_pauta_prensa.idpauta_prensa as id','tbl_pauta_prensa.fecha as fechaPauta','tbl_pauta_prensa.tipo_servicio as tipoPauta','tbl_medio.nombre as nombreMedio','tbl_seccion.nombre as nombreSeccion','tbl_pauta_prensa.titular as titular','tbl_pauta_prensa.texto as texto','tbl_pauta_prensa.codigo as codigoImagen','tbl_medio.idtipo_medio as subTipoMedio','tbl_lectoria.lectoria as lectoria','tbl_pauta_prensa.pagina as paginas','tbl_pauta_prensa.idmedio as idMedio')
+                    ->select('tbl_pauta_prensa.idpauta_prensa as id','tbl_pauta_prensa.fecha as fechaPauta','tbl_pauta_prensa.tipo_servicio as tipoPauta','tbl_medio.nombre as nombreMedio','tbl_seccion.nombre as nombreSeccion','tbl_pauta_prensa.titular as titular','tbl_pauta_prensa.texto as texto','tbl_pauta_prensa.codigo as codigoImagen','tbl_medio.idtipo_medio as subTipoMedio','tbl_lectoria.lectoria as lectoria','tbl_pauta_prensa.pagina as paginas','tbl_pauta_prensa.idmedio as idMedio','tbl_pauta_prensa.equivalencia as equivalencia')
                     ->get();
 
-        $pautasRecortes = DB::connection('mysql_24_prensa')->table('tbl_pauta_recorte')
-                    ->where('idpauta_servicio','=',$id)
-                    ->select('idpauta_servicio as idpauta','alto','ancho','equivalencia')
-                    ->orderBy('codigo','asc')
-                    ->get();
+        $pautasRecortes = DB::connection('intranet_prensa')->table('recortes')
+                            ->where('pauta_prensas_idPautaPrensa','=',$id)
+                            ->where('ruta','NOT LIKE','%preview%')
+                            ->select('ruta','pauta_prensas_idPautaPrensa as idpauta','alto','ancho','pagina')
+                            ->get();
+
+        if(count($pautasRecortes)==0){
+
+            $pautasRecortes = DB::connection('web_noticias')->table('tbl_pauta_recorte')
+                        ->where('idpauta_servicio','=',$id)
+                        ->select('idpauta_servicio as idpauta','alto','ancho','equivalencia')
+                        ->orderBy('codigo','asc')
+                        ->get();
+
+        }
+
+        $nroRecortes = count($pautasRecortes);
 
         $pauta = array();
         foreach ($pautasPrensa as $pautaPrensa) {
@@ -47,23 +59,25 @@ class ControllerVistas extends Controller
             $mes = substr($fecha, 5,2);
             $dia = substr($fecha, 8,2);
             $fechaPauta = $dia.'-'.$mes.'-'.$año;
-            $equivalencia = 0;
+            $equivalencia = $pautaPrensa->equivalencia; 
             $recortes = array();
             $i=0;
             $alto = 0;
             $ancho = 0;
-            if(strtotime($pautaPrensa->fechaPauta)==strtotime('2017-11-23')){
-                $nombreMedio = DB::connection('mysql_24_noticias')->table('medio_prensas')->where('idMedioPrensa','=',$pautaPrensa->idMedio)->value('nombreMedioPrensa');
-            }else{
-                $nombreMedio = $pautaPrensa->nombreMedio;
-            }
+            $nombreMedio = $pautaPrensa->nombreMedio;
+
             foreach ($pautasRecortes as $pautaRecorte) {
                 $i++;
-                $equivalencia = $equivalencia + $pautaRecorte->equivalencia;
-                $rutaImagen = "http://servicios.noticiasperu.pe/medios/Recortes/".$año."/".$mes."/".$dia."/".$pautaPrensa->codigoImagen."_".$i.".jpg";
+                //$equivalencia = $equivalencia + $pautaRecorte->equivalencia;
+                $rutaImagen = "http://servicios.noticiasperu.pe/medios/Recortes1/".$año."/".$mes."/".$dia."/".$pautaRecorte->ruta;
                 $recortes[] = ['rutaImagen'=>$rutaImagen,'codigo'=>$i];
-                $alto = $pautaRecorte->alto;
-                $ancho = $pautaRecorte->ancho;
+                list($ancho,$alto) = getimagesize($rutaImagen);
+                $DPI = 300;
+                $CTE = 2.54;
+                $ancho = round(($ancho * $CTE/$DPI),2);
+                $alto = round(($alto * $CTE/$DPI),2);
+                //$alto = $pautaRecorte->alto;
+                //$ancho = $pautaRecorte->ancho;
             }
             $rutaPDF = "";
             if(count($pautasRecortes)>1){
@@ -91,7 +105,7 @@ class ControllerVistas extends Controller
                     ->select('pautasTv.id','pautasTv.fechaPauta','pautasTv.tipoPauta','mediosAV.nombreMedio','programasAV.nombrePrograma','pautasTv.titular','pautasTv.texto','pautasTv.rutaVideo','pautasTv.equivalencia')
                     ->get();*/
 
-        $pautasTv = DB::connection('mysql_24')->table('pautatv')
+        $pautasTv = DB::connection('noticias_24')->table('pautatv')
                     ->join('programa','pautatv.Programa','programa.NumID')
                     ->join('medioav','programa.Medio','medioav.NumID')
                     ->where('pautatv.NumID','=',$id)
@@ -110,7 +124,7 @@ class ControllerVistas extends Controller
             }else{
                 $equivalencia = 0;
             }
-            $rutaVideo = "http://servicios.noticiasperu.pe/medios/tv/mp4_9/".$año."/".$mes."/".$dia."/".$pautaTv->id.".mp4";
+            $rutaVideo = "http://servicios.noticiasperu.pe/medios/tv/mp4_10/".$año."/".$mes."/".$dia."/".$pautaTv->id.".mp4";
             $pauta[] = ['id'=>$pautaTv->id,'fechaPauta'=>$fechaPauta,'tipoPauta'=>$pautaTv->tipoPauta,'nombreMedio'=>$pautaTv->nombreMedio,'nombrePrograma'=>$pautaTv->nombrePrograma,'titular'=>$pautaTv->titular,'texto'=>$pautaTv->texto,'rutaVideo'=>$rutaVideo,'equivalencia'=>$equivalencia,'horaPauta'=>substr($pautaTv->horaPauta,0,5)];    
         }
 
@@ -125,7 +139,7 @@ class ControllerVistas extends Controller
                     ->select('pautasRadio.id','pautasRadio.fechaPauta','pautasRadio.tipoPauta','mediosAV.nombreMedio','programasAV.nombrePrograma','pautasRadio.titular','pautasRadio.texto','pautasRadio.rutaAudio')
                     ->get();*/
 
-        $pautasRadio = DB::connection('mysql_24')->table('pautaradio')
+        $pautasRadio = DB::connection('noticias_24')->table('pautaradio')
                     ->join('programa','pautaradio.Programa','programa.NumID')
                     ->join('medioav','programa.Medio','medioav.NumID')
                     ->where('pautaradio.NumID','=',$id)
@@ -158,7 +172,7 @@ class ControllerVistas extends Controller
                     ->select('pautasInternet.id','pautasInternet.fechaPauta','pautasInternet.tipoPauta','mediosInternet.nombreMedio','pautasInternet.titular','pautasInternet.texto','pautasInternet.rutaImagen','pautasInternet.rutaWeb')
                     ->get();*/
 
-        $pautasInternet = DB::connection('mysql_24')->table('pautainternetweb')
+        $pautasInternet = DB::connection('noticias_24')->table('pautainternetweb')
                     ->join('medioav','pautainternetweb.Medio','medioav.NumID')
                     ->where('pautainternetweb.NumID','=',$id)
                     ->select('pautainternetweb.NumID as id','pautainternetweb.Fecha as fechaPauta','pautainternetweb.tipo_servicio as tipoPauta','medioav.Nombre as nombreMedio','pautainternetweb.Titular as titular','pautainternetweb.Texto as texto','pautainternetweb.equivalencia','pautainternetweb.Ruta as rutaWeb','pautainternetweb.FechaRegistro as fechaRegistro')

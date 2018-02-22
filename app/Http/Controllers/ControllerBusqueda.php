@@ -19,9 +19,13 @@ use App\SeccionPrensa;
 
 use App\PalabraClave;
 use App\PautaRecorte;
+use App\ProgramaAV;
 use Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use DB;
+use PHPExcel_Shared_Date;
+
+ini_set('memory_limit','512M');
 
 class ControllerBusqueda extends Controller
 {
@@ -104,6 +108,7 @@ class ControllerBusqueda extends Controller
     public function busquedaAvanzada(Request $request)
     {
         $fecha = date('Y-m-d');
+        
         $pautasPrensa = PautaPrensa::join('seccionesPrensa','seccionesPrensa.id','pautasPrensa.seccionesPrensa_id')
                     ->join('mediosPrensa','mediosPrensa.id','seccionesPrensa.mediosPrensa_id')
                     ->where('pautasPrensa.fechaPauta','=',$fecha)
@@ -127,16 +132,16 @@ class ControllerBusqueda extends Controller
 
         $dataResponse = new Collection;
         foreach ($pautasPrensa as $pautaPrensa) {
-            $dataResponse->push(['id'=>$pautaPrensa->id, 'fechaPauta'=>$pautaPrensa->fechaPauta, 'tipoPauta'=>$pautaPrensa->tipoPauta, 'nombreMedio'=>$pautaPrensa->nombreMedio, 'nombreSP'=>$pautaPrensa->nombreSeccion, 'titular'=>$pautaPrensa->titular]);
+            $dataResponse->push(['id'=>$pautaPrensa->id, 'fechaPauta'=>$pautaPrensa->fechaPauta, 'tipoPauta'=>$pautaPrensa->tipoPauta, 'nombreMedio'=>$pautaPrensa->nombreMedio, 'nombreSP'=>$pautaPrensa->nombreSeccion, 'titular'=>$pautaPrensa->titular,'valor'=>1]);
         }
         foreach ($pautasTv as $pautaTv) {
-            $dataResponse->push(['id'=>$pautaTv->id, 'fechaPauta'=>$pautaTv->fechaPauta, 'tipoPauta'=>$pautaTv->tipoPauta, 'nombreMedio'=>$pautaTv->nombreMedio, 'nombreSP'=>$pautaTv->nombrePrograma, 'titular'=>$pautaTv->titular]);
+            $dataResponse->push(['id'=>$pautaTv->id, 'fechaPauta'=>$pautaTv->fechaPauta, 'tipoPauta'=>$pautaTv->tipoPauta, 'nombreMedio'=>$pautaTv->nombreMedio, 'nombreSP'=>$pautaTv->nombrePrograma, 'titular'=>$pautaTv->titular,'valor'=>1]);
         }
         foreach ($pautasRadio as $pautaRadio) {
-            $dataResponse->push(['id'=>$pautaRadio->id, 'fechaPauta'=>$pautaRadio->fechaPauta, 'tipoPauta'=>$pautaRadio->tipoPauta, 'nombreMedio'=>$pautaRadio->nombreMedio, 'nombreSP'=>$pautaRadio->nombrePrograma, 'titular'=>$pautaRadio->titular]);
+            $dataResponse->push(['id'=>$pautaRadio->id, 'fechaPauta'=>$pautaRadio->fechaPauta, 'tipoPauta'=>$pautaRadio->tipoPauta, 'nombreMedio'=>$pautaRadio->nombreMedio, 'nombreSP'=>$pautaRadio->nombrePrograma, 'titular'=>$pautaRadio->titular,'valor'=>1]);
         }
         foreach ($pautasInternet as $pautaInternet) {
-            $dataResponse->push(['id'=>$pautaInternet->id, 'fechaPauta'=>$pautaInternet->fechaPauta, 'tipoPauta'=>$pautaInternet->tipoPauta, 'nombreMedio'=>$pautaInternet->nombreMedio, 'nombreSP'=>"", 'titular'=>$pautaInternet->titular]);
+            $dataResponse->push(['id'=>$pautaInternet->id, 'fechaPauta'=>$pautaInternet->fechaPauta, 'tipoPauta'=>$pautaInternet->tipoPauta, 'nombreMedio'=>$pautaInternet->nombreMedio, 'nombreSP'=>"", 'titular'=>$pautaInternet->titular,'valor'=>1]);
         }
 
         session()->put('arrayBusqueda',$dataResponse);
@@ -156,12 +161,12 @@ class ControllerBusqueda extends Controller
                 $id = $dataResponse['id'];
                 $tipoPauta = $dataResponse['tipoPauta'];
                 return '<div align="center">
-                            <input type="checkbox" name="checkPauta" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true">
+                            <input type="checkbox" name="checkPauta" class="checkitem" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true" onclick="cambiarValorPauta(this);">
                         </div>';
             })
-            ->editColumn('titular','<span title="{{$titular}}" data-toogle="tooltip" data-placement="top">{{substr($titular,0,35)}}</span>')
-            ->editColumn('nombreMedio','<span title="{{$nombreMedio}}" data-toogle="tooltip" data-placement="top">{{substr($nombreMedio,0,8)}}</span>')
-            ->editColumn('nombreSP','<span title="{{$nombreSP}}" data-toogle="tooltip" data-placement="top">{{substr($nombreSP,0,10)}}</span>')
+            ->editColumn('titular','<span title="{{$titular}}" data-toogle="tooltip" data-placement="top">{{substr($titular,0,40)}}...</span>')
+            ->editColumn('nombreMedio','<span title="{{$nombreMedio}}" data-toogle="tooltip" data-placement="top">{{substr($nombreMedio,0,12)}}</span>')
+            ->editColumn('nombreSP','<span title="{{$nombreSP}}" data-toogle="tooltip" data-placement="top">{{substr($nombreSP,0,15)}}</span>')
             ->rawColumns(['opciones','checkPauta','nombreMedio','nombreSP','titular'])
             ->make(true);
     }
@@ -197,28 +202,38 @@ class ControllerBusqueda extends Controller
                 $frase = 0;
                 $palabras = explode(" ",$texto);
                 foreach ($palabras as $palabra) {
-                    if(strpos("(",$palabra)!==false){
-                        $frase = 1;
-                        $textoQuery = $textoQuery.'+"'.str_replace('(', '', $palabra).' ';
+                    if(strpos($palabra, '"')!==false){
+                        if(strpos($palabra,'"')===0){
+                            $frase = 1;
+                            $textoQuery = $textoQuery.str_replace('"', '+"', $palabra).' ';
+                        }else{
+                            $textoQuery = $textoQuery.str_replace('"', '" ', $palabra);
+                        }
                     }else{
-                        if($frase == 1){
-                            if(strpos(")",$palabra)!==false){
-                                $textoQuery = $textoQuery.str_replace(')', '', $palabra).'" ';
-                                $frase = 0;
+                        if($frase == 0){
+                            if(strpos($palabra, '-')!==false){
+                                //echo "aqui";
+                                if(strpos($palabra, '-')!==0){
+                                    //echo "aquitambien";
+                                    $textoQuery = $textoQuery.'+"'.str_replace('-', ' ', $palabra).'" ';
+                                }else{
+                                    $textoQuery = $textoQuery.$palabra.' ';
+                                }
                             }else{
-                                $textoQuery = $textoQuery.$palabra.' ';
+                                $textoQuery = $textoQuery.'+'.$palabra.' ';
                             }
                         }else{
-                            if(strpos("-",$palabra)!==false){
-                                $textoQuery = $textoQuery.str_replace('-', '-"',$palabra).'" ';
+                            if(strpos($palabra, '-')!==false){
+                                $textoQuery = $textoQuery.str_replace('-', ' ', $palabra).' ';
                             }else{
-                                $textoQuery = $textoQuery.'+"'.$palabra.'" ';
+                                $textoQuery = $textoQuery.$palabra.' ';
                             }
                             
                         }
                     }
                 }
-                $arrayTextoQuery[] = $textoQuery;
+                //echo $textoQuery;
+                $arrayTextoQuery[] = "'".$textoQuery."'";
             }
         }
 
@@ -272,7 +287,7 @@ class ControllerBusqueda extends Controller
                         ->get();
 
             foreach ($pautasPrensa as $pautaPrensa) {
-                $dataResponse->push(['id'=>$pautaPrensa->id, 'fechaPauta'=>$pautaPrensa->fechaPauta, 'tipoPauta'=>$pautaPrensa->tipoPauta, 'nombreMedio'=>$pautaPrensa->nombreMedio, 'nombreSP'=>$pautaPrensa->nombreSeccion, 'titular'=>$pautaPrensa->titular]);
+                $dataResponse->push(['id'=>$pautaPrensa->id, 'fechaPauta'=>$pautaPrensa->fechaPauta, 'tipoPauta'=>$pautaPrensa->tipoPauta, 'nombreMedio'=>$pautaPrensa->nombreMedio, 'nombreSP'=>$pautaPrensa->nombreSeccion, 'titular'=>$pautaPrensa->titular,'valor'=>1]);
             }
         }//end if
         if(!$filtroMedios || count($mediosAV)!=0){
@@ -298,7 +313,7 @@ class ControllerBusqueda extends Controller
                             ->get();
 
                 foreach ($pautasTv as $pautaTv) {
-                    $dataResponse->push(['id'=>$pautaTv->id, 'fechaPauta'=>$pautaTv->fechaPauta, 'tipoPauta'=>$pautaTv->tipoPauta, 'nombreMedio'=>$pautaTv->nombreMedio, 'nombreSP'=>$pautaTv->nombrePrograma, 'titular'=>$pautaTv->titular]);
+                    $dataResponse->push(['id'=>$pautaTv->id, 'fechaPauta'=>$pautaTv->fechaPauta, 'tipoPauta'=>$pautaTv->tipoPauta, 'nombreMedio'=>$pautaTv->nombreMedio, 'nombreSP'=>$pautaTv->nombrePrograma, 'titular'=>$pautaTv->titular,'valor'=>1]);
                 }
             }
             if($checkRadio=='true'){
@@ -323,7 +338,7 @@ class ControllerBusqueda extends Controller
                             ->get();
 
                 foreach ($pautasRadio as $pautaRadio) {
-                    $dataResponse->push(['id'=>$pautaRadio->id, 'fechaPauta'=>$pautaRadio->fechaPauta, 'tipoPauta'=>$pautaRadio->tipoPauta, 'nombreMedio'=>$pautaRadio->nombreMedio, 'nombreSP'=>$pautaRadio->nombrePrograma, 'titular'=>$pautaRadio->titular]);
+                    $dataResponse->push(['id'=>$pautaRadio->id, 'fechaPauta'=>$pautaRadio->fechaPauta, 'tipoPauta'=>$pautaRadio->tipoPauta, 'nombreMedio'=>$pautaRadio->nombreMedio, 'nombreSP'=>$pautaRadio->nombrePrograma, 'titular'=>$pautaRadio->titular,'valor'=>1]);
                 }
             }
         }//end if
@@ -347,7 +362,7 @@ class ControllerBusqueda extends Controller
                         ->select('pautasInternet.id','pautasInternet.fechaPauta','pautasInternet.tipoPauta','mediosInternet.nombreMedio','pautasInternet.titular')
                         ->get();
             foreach ($pautasInternet as $pautaInternet) {
-                $dataResponse->push(['id'=>$pautaInternet->id, 'fechaPauta'=>$pautaInternet->fechaPauta, 'tipoPauta'=>$pautaInternet->tipoPauta, 'nombreMedio'=>$pautaInternet->nombreMedio, 'nombreSP'=>"", 'titular'=>$pautaInternet->titular]);
+                $dataResponse->push(['id'=>$pautaInternet->id, 'fechaPauta'=>$pautaInternet->fechaPauta, 'tipoPauta'=>$pautaInternet->tipoPauta, 'nombreMedio'=>$pautaInternet->nombreMedio, 'nombreSP'=>"", 'titular'=>$pautaInternet->titular,'valor'=>1]);
             }
         }//end if
         
@@ -368,12 +383,12 @@ class ControllerBusqueda extends Controller
                 $id = $dataResponse['id'];
                 $tipoPauta = $dataResponse['tipoPauta'];
                 return '<div align="center">
-                            <input type="checkbox" name="checkPauta" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true">
+                            <input type="checkbox" name="checkPauta" class="checkitem" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true" onclick="cambiarValorPauta(this);">
                         </div>';
             })
-            ->editColumn('titular','<span title="{{$titular}}" data-toogle="tooltip" data-placement="top">{{substr($titular,0,35)}}</span>')
-            ->editColumn('nombreMedio','<span title="{{$nombreMedio}}" data-toogle="tooltip" data-placement="top">{{substr($nombreMedio,0,8)}}</span>')
-            ->editColumn('nombreSP','<span title="{{$nombreSP}}" data-toogle="tooltip" data-placement="top">{{substr($nombreSP,0,10)}}</span>')
+            ->editColumn('titular','<span title="{{$titular}}" data-toogle="tooltip" data-placement="top">{{substr($titular,0,40)}}...</span>')
+            ->editColumn('nombreMedio','<span title="{{$nombreMedio}}" data-toogle="tooltip" data-placement="top">{{substr($nombreMedio,0,15)}}</span>')
+            ->editColumn('nombreSP','<span title="{{$nombreSP}}" data-toogle="tooltip" data-placement="top">{{substr($nombreSP,0,15)}}</span>')
             ->rawColumns(['opciones','checkPauta','nombreMedio','nombreSP','titular'])
             ->make(true);
     }
@@ -542,7 +557,7 @@ class ControllerBusqueda extends Controller
                 $id = $arrayFiltrado['id'];
                 $tipoPauta = $arrayFiltrado['tipoPauta'];
                 return '<div align="center">
-                            <input type="checkbox" name="checkPauta" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true">
+                            <input type="checkbox" name="checkPauta" class="checkitem" id="checkPauta" value="'.$tipoPauta."-".$id.'" checked="true"  onclick="cambiarValorPauta(this);">
                         </div>';
             })
             ->editColumn('titular','<span title="{{$titular}}" data-toogle="tooltip" data-placement="top">{{substr($titular,0,35)}}</span>')
@@ -554,65 +569,35 @@ class ControllerBusqueda extends Controller
 
     public function exportarExcel(Request $request)
     {
-        $select = "";
-        if($request->checkFecha == 1){
-            $select = $select."?fechaPauta as Fecha,";
-        }
-        if($request->checkTipoPauta == 1){
-            $select = $select."?tipoPauta as TipoPauta,";
-        }
-        if($request->checkMedio == 1){
-            $select = $select."123,";
-        }
-        if($request->checkPrograma == 1){
-            $select = $select."456,";
-        }
-        if($request->checkTitular == 1){
-            $select = $select."?titular as Titular,";
-        }
-        if($request->checkTexto == 1){
-            $select = $select."?texto as Texto,";
-        }
-        if($request->checkEquivalencia == 1){
-            $select = $select."?equivalencia as Equivalencia";
-        }
-        if(substr($select, -1)==","){
-            $select = substr($select, 0,(strlen($select)-1));
-        }
         $arrayFiltrado = session()->get('arrayFiltrado');
         $arrayPrensa = array();
         $arrayTv = array();
         $arrayRadio = array();
         $arrayInternet = array();
         foreach ($arrayFiltrado as $pauta) {
-            if($pauta['tipoPauta']=='Prensa'){
-                $arrayPrensa[] = $pauta['id'];
-            }
-            if($pauta['tipoPauta']=='Televisión'){
-                $arrayTv[] = $pauta['id'];
-            }
-            if($pauta['tipoPauta']=='Radio'){
-                $arrayRadio[] = $pauta['id'];
-            }
-            if($pauta['tipoPauta']=='Internet'){
-                $arrayInternet[] = $pauta['id'];
+            if($pauta['valor']==1){
+                if($pauta['tipoPauta']=='Prensa'){
+                    $arrayPrensa[] = $pauta['id'];
+                }
+                if($pauta['tipoPauta']=='Television'){
+                    $arrayTv[] = $pauta['id'];
+                }
+                if($pauta['tipoPauta']=='Radio'){
+                    $arrayRadio[] = $pauta['id'];
+                }
+                if($pauta['tipoPauta']=='Internet'){
+                    $arrayInternet[] = $pauta['id'];
+                }
             }
         }
 
-        $selectPrensa = str_replace("?","pautasPrensa.", $select);
-        $selectTv = str_replace("?","pautasTv.", $select);
-        $selectRadio = str_replace("?","pautasRadio.", $select);
-        $selectInternet = str_replace("?","pautasInternet.", $select);
+        $selectPrensa = "pautasPrensa.id as idpauta, pautasPrensa.fechaPauta as fecha,pautasPrensa.tipoPauta as tipoPauta,mediosPrensa.nombreMedio as nombreMedio,seccionesPrensa.nombreSeccion as nombreSeccion,pautasPrensa.titular as titular,pautasPrensa.texto as texto,pautasPrensa.equivalencia as equivalencia,pautasPrensa.mediosPrensa_id as idMedio";
 
-        $selectPrensa = str_replace("123","mediosPrensa.nombreMedio as Medio", $selectPrensa);
-        $selectTv = str_replace("123","mediosAV.nombreMedio as Medio", $selectTv);
-        $selectRadio = str_replace("123","mediosAV.nombreMedio as Medio", $selectRadio);
-        $selectInternet = str_replace("123","mediosInternet.nombreMedio as Medio", $selectInternet);
+        $selectTv = "pautasTv.id as idpauta, pautasTv.fechaPauta as fecha,pautasTv.tipoPauta as tipoPauta,mediosAV.nombreMedio as nombreMedio,programasAV.nombrePrograma as nombrePrograma,pautasTv.titular as titular,pautasTv.texto as texto,pautasTv.equivalencia as equivalencia";
 
-        $selectPrensa = str_replace("456","seccionesPrensa.nombreSeccion as ProgSec", $selectPrensa);
-        $selectTv = str_replace("456","programasAV.nombrePrograma as ProgSec", $selectTv);
-        $selectRadio = str_replace("456","programasAV.nombrePrograma as ProgSec", $selectRadio);
-        $selectInternet = str_replace("456,","", $selectInternet);
+        $selectRadio = "pautasRadio.id as idpauta, pautasRadio.fechaPauta as fecha,pautasRadio.tipoPauta as tipoPauta,mediosAV.nombreMedio as nombreMedio,programasAV.nombrePrograma as nombrePrograma,pautasRadio.titular as titular,pautasRadio.texto as texto,pautasRadio.equivalencia as equivalencia";
+
+        $selectInternet = "pautasInternet.id as idpauta, pautasInternet.fechaPauta as fecha,pautasInternet.tipoPauta as tipoPauta,mediosInternet.nombreMedio as nombreMedio,pautasInternet.titular as titular,pautasInternet.texto as texto,pautasInternet.equivalencia as equivalencia";
 
         $resultadosPrensa = PautaPrensa::join('seccionesPrensa','pautasPrensa.seccionesPrensa_id','seccionesPrensa.id')
                         ->join('mediosPrensa','seccionesPrensa.mediosPrensa_id','mediosPrensa.id')
@@ -629,71 +614,282 @@ class ControllerBusqueda extends Controller
         $resultadosInternet = PautaInternet::join('mediosInternet','pautasInternet.mediosInternet_id','mediosInternet.id')
                         ->whereIn('pautasInternet.id',$arrayInternet)->selectRaw($selectInternet)->get();
 
-        return Excel::create("ExcelNoticias",function($excel) use ($resultadosPrensa,$resultadosTv,$resultadosRadio,$resultadosInternet){
+        $arrayResultados = array();
+        $arrayCabeceras = array();
+        $arrayCabeceras[]= "Fecha";
+        $arrayCabeceras[]= "Tipo de Medio";
+        $arrayCabeceras[]= "Medio";
+        $arrayCabeceras[]= "Sección/Programa";
+        $arrayCabeceras[]= "Titular";
+        $arrayCabeceras[]= "Texto";
+        $arrayCabeceras[]= "Equivalencia";
+        $arrayCabeceras[]= "Link";
+        
+        foreach ($resultadosPrensa as $resultado) {
+            $fecha = $resultado->fecha;
+            $año = substr($fecha, 0,4);
+            $mes = substr($fecha, 5,2);
+            $dia = substr($fecha, 8,2);
+            $pauta = array();
+            $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
+            $pauta['tipoPauta'] = $resultado->tipoPauta;
+            $pauta['nombreMedio'] = $resultado->nombreMedio;
+            $pauta['nombrePrograma'] = $resultado->nombreSeccion;
+            $pauta['titular'] = $resultado->titular;
+            $pauta['texto'] = $resultado->texto;
+            if($resultado->equivalencia>0){
+                $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
+            }else{
+                $pauta['equivalencia'] = number_format(0,2);
+            }
+            $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaPrensa.php?idPauta='.$resultado->idpauta.'&bool=1","Abrir")';
+            $arrayResultados[] = $pauta;
+        }
+
+        foreach ($resultadosTv as $resultado) {
+            $fecha = $resultado->fecha;
+            $año = substr($fecha, 0,4);
+            $mes = substr($fecha, 5,2);
+            $dia = substr($fecha, 8,2);
+            $pauta = array();
+            $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
+            $pauta['tipoPauta'] = $resultado->tipoPauta;
+            $pauta['nombreMedio'] = $resultado->nombreMedio;
+            $pauta['nombrePrograma'] = $resultado->nombrePrograma;
+            $pauta['titular'] = $resultado->titular;
+            $pauta['texto'] = $resultado->texto;
+            if($resultado->equivalencia>0){
+                $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
+            }else{
+                $pauta['equivalencia'] = number_format(0,2);
+            }
+            $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaPrensa.php?idPauta='.$resultado->idpauta.'&bool=1","Abrir")';
+            $arrayResultados[] = $pauta;
+        }
+        foreach ($resultadosRadio as $resultado) {
+            $fecha = $resultado->fecha;
+            $año = substr($fecha, 0,4);
+            $mes = substr($fecha, 5,2);
+            $dia = substr($fecha, 8,2);
+            $pauta = array();
+            $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
+            $pauta['tipoPauta'] = $resultado->tipoPauta;
+            $pauta['nombreMedio'] = $resultado->nombreMedio;
+            $pauta['nombrePrograma'] = $resultado->nombrePrograma;
+            $pauta['titular'] = $resultado->titular;
+            $pauta['texto'] = $resultado->texto;
+            if($resultado->equivalencia>0){
+                $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
+            }else{
+                $pauta['equivalencia'] = number_format(0,2);
+            }
+            $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaPrensa.php?idPauta='.$resultado->idpauta.'&bool=1","Abrir")';
+            $arrayResultados[] = $pauta;
+        }
+        foreach ($resultadosInternet as $resultado) {
+            $fecha = $resultado->fecha;
+            $año = substr($fecha, 0,4);
+            $mes = substr($fecha, 5,2);
+            $dia = substr($fecha, 8,2);
+            $pauta = array();
+            $pauta['fecha'] = PHPExcel_Shared_Date::FormattedPHPToExcel($año,$mes,$dia);
+            $pauta['tipoPauta'] = $resultado->tipoPauta;
+            $pauta['nombreMedio'] = $resultado->nombreMedio;
+            $pauta['nombrePrograma'] = "";
+            $pauta['titular'] = $resultado->titular;
+            $pauta['texto'] = $resultado->texto;
+            if($resultado->equivalencia>0){
+                $pauta['equivalencia'] = number_format($resultado->equivalencia,2);
+            }else{
+                $pauta['equivalencia'] = number_format(0,2);
+            }
+            $pauta['link'] = '=HYPERLINK("http://servicios.noticiasperu.pe/gui/view/VistaPautaInternet.php?idPauta='.$resultado->idpauta.'&bool=0","Abrir")';
+            $arrayResultados[] = $pauta;
+        }
+
+        /*return Excel::create("ExcelNoticias",function($excel) use ($arrayResultados,$arrayCabeceras){
             $excel->setTitle("Title");
-            $excel->sheet("Hoja 1",function($sheet) use ($resultadosPrensa,$resultadosTv,$resultadosRadio,$resultadosInternet){
-                $sheet->fromArray($resultadosPrensa);
-                $sheet->fromArray($resultadosTv);
-                $sheet->fromArray($resultadosRadio);
-                $sheet->fromArray($resultadosInternet);
+            $excel->sheet("Hoja 1",function($sheet) use ($arrayResultados,$arrayCabeceras){
+                $sheet->fromArray($arrayResultados,null,"A2",null,false);
+                $sheet->row(1,$arrayCabeceras);
                 $sheet->row(1,function($row){
                     $row->setBackground('#33BEFF');
                     $row->setFontWeight('bold');
                 });
-
+                $sheet->setWidth(array('A'=>10,'B'=>10,'C'=>15,'D'=>15,'E'=>40,'F'=>50,'G'=>10,'H'=>10));
+                $sheet->setColumnFormat(array('B:F'=>'@','G'=>'0.00','A'=>'YYYY/MM/DD'));
+                $sheet->cells('F2:F5',function($cell){
+                    $cell->setAlignment('justified');
+                });
             });
-        })->download("xls");
+        })->download("xls");*/
+
+        $headers = [
+                    'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+                    'Content-type'        => "Content-type: application/vnd.ms-excel",
+                    'Content-Type'        => 'application/octet-stream',
+                    'Content-Type'        => 'application/download',
+                    'Content-Disposition' => 'attachment; filename=NoticiasPerú-Pautas-'.date('Y-m-d').'.xls',
+                    'Expires'             => '0',
+                    'Pragma'              => 'public'
+            ];
+
+            array_unshift($arrayResultados, array_keys($arrayResultados[0]));
+
+            $callback = function() use ($arrayResultados)
+            {
+                $FH = fopen('php://output', 'w');
+
+                echo "<html>";
+                echo " <meta charset='UTF-8'>";
+                echo '<style type="text/css">
+                        .style3 {
+                            font-family: Verdana, Arial, Helvetica, sans-serif;
+                            font-size: 14px;
+                            font-weight: bold;
+                            color: #FFFFFF;
+                        }
+                        .style5 {font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; }
+                        .style8 {font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10px; }
+                        -->
+                        .filaColor6{
+                            font-family: Calibri;
+                            font-size: 14px;
+                            color: #000000;
+                            background-color:#C6D5E1;
+                            border:solid 0px #CCCCCC;
+                            height:16px;
+                        }
+
+                        .estiloTitulo_letra3_pie_pagina_plomo
+                        {   padding-left:11px;
+                            font-size: 14px;
+                            letter-spacing:0px;
+                            padding-left:10px;
+                            padding-top:3px;
+                            padding-bottom:3px;
+                            font-family: Arial, Helvetica, sans-serif;
+                            background-color:#A4A4A4;
+                            height:15px;
+                            color:#FFFFFF;
+                            font-size: 11px;
+                            font-family: Calibri;
+                            font-weight: lighter;
+                        }
+
+                        .letraMayuscula2 {
+                            font-family: "Berlin Sans FB";
+                            /*font-size: 15px;*/
+                            font-size: 16px;
+                        }
+                        body {
+                            background-color: #FDFDFD;
+                            padding:0; /* BORRAMOS LOS RELLENOS */
+                            margin:0; /* BORRAMOS LOS MARGENES*/
+                            }
+                        #contenedor {
+
+                          margin:auto;
+                          border-left:1px solid black;
+                          border-right:1px solid black;
+                          }
+
+                        p {
+                            margin: 0 auto;
+                        }
+
+                        </style>';
+
+                       
+                echo '<body marginwidth="0" leftmargin="0" topmargin="0" style="margin-bottom:0px; margin-top:0px;"><table width="720" border="0" align="center" cellpadding="0" cellspacing="0" ><tr><td valign="top">';
+                echo '<div align="left" ></div>
+                        <table width="100%" border="1" align="center" cellpadding="2" cellspacing="0"><tr align="center" ><td width="80" height="23"><span class="style5">Fecha</span></td><td width="90"><span class="style5">Tipo de Medio</span></td><td width="100" ><span class="style5">Medio</span></td><td width="100"><span class="style5">Sección/Programa</span></td> <td width="700"><span class="style5">Titular</span></td>  <td width="700" ><span class="style5">Texto</span></td><td width="90" ><span class="style5">Equivalencia</span></td><td width="80" ><span class="style5">Link</span></td></tr>';
+                for ($i=1; $i <count($arrayResultados) ; $i++) {
+                    echo '    <tr align="center" ><td valign="top"><span >'.$arrayResultados[$i]['fecha'].'</span></td><td valign="top">'.$arrayResultados[$i]['tipoPauta'].'</td><td valign="top">'.$arrayResultados[$i]['nombreMedio'].'</td><td valign="top"><span >'.$arrayResultados[$i]['nombrePrograma'].'</span></td><td valign="top"><span >'.$arrayResultados[$i]['titular'].'</span></td><td valign="top"><span >'.$arrayResultados[$i]['texto'].'</span></td> <td valign="top"><span >'.$arrayResultados[$i]['equivalencia'].'</span></td> <td valign="top"><a href="'.$arrayResultados[$i]['link'].'&bool=0">Abrir</a></td>';
+                }
+
+                echo "</td></tr></table></body>";
+                echo "</html>";
+
+                fclose($FH);
+            };
+
+            return Response::stream($callback, 200, $headers);
         
     }
 
     public function cambiarValorPauta(Request $request){
-
+        $arrayFiltrado = session()->get('arrayFiltrado');
+        $nvoArray = array();
+        $idpauta = 0;
+        foreach ($arrayFiltrado as $pauta) {
+            if($pauta['tipoPauta']==$request->tipo && $pauta['id']==$request->idpauta){
+                $pauta['valor'] = $request->value;
+                $idpauta = $pauta['id'];
+            }
+            $nvoArray[] = $pauta;
+        }
+        //print_r($nvoArray);
+        echo $idpauta;
+        session()->put('arrayFiltrado',$nvoArray);
+        return response()->json("Terminado");
     }
 
-    /*public function importarMediosPrensa24(){
-        $medios24 = DB::connection('mysql_24_prensa')->table('tbl_medio')
-                    ->whereIn('idtipo_medio',[1,2])
-                    ->select('idmedio as id','nombre as nombreMedio','idtipo_medio as subTipoMedio')
-                    ->get();
-
-        $arrayMedios = array();
-
-        foreach ($medios24 as $medio24) {
-            $medioPrensa = new MedioPrensa();
-            $medioPrensa->id = $medio24->id;
-            $medioPrensa->nombreMedio = $medio24->nombreMedio;
-            if($medio24->subTipoMedio == 1){
-                $medioPrensa->subTipoMedio = 'Diario';
-            }else{
-                $medioPrensa->subTipoMedio = 'Revista';
-            }
-            $medioPrensa->tipoMedios_id = 1;
-            $medioPrensa->save();
-
-            $arrayMedios[] = $medioPrensa->nombreMedio;
+    public function cambiarValorTodo(Request $request){
+        $arrayFiltrado = session()->get('arrayFiltrado');
+        $nvoArray = array();
+        foreach ($arrayFiltrado as $pauta) {
+            $pauta['valor'] = $request->value;
+            $nvoArray[] = $pauta;
         }
+        session()->put('arrayFiltrado',$nvoArray);
+        return response()->json("Terminado");
+    }
 
-        return response()->json($arrayMedios);
-    }*/
-
-    public function importarSeccionesPrensa24(){
-        $medios24 = DB::connection('mysql_24_prensa')->table('tbl_seccion')
-                    ->select('idseccion','nombre','estado')
+    public function importarMediosPrensa(){
+        $medios24 = DB::connection('web_noticias')->table('medio_prensas')
+                    ->select('idMedioPrensa','nombreMedioPrensa','tipo_medio_prensas_idTipoMedioPrensa as tipoMedio')
                     ->get();
 
-        $arrayMedios = array();
-        echo count($medios24).'</br>';
-
-        foreach ($medios24 as $medio24) {
-            $existe = SeccionPrensa::find($medio24->idseccion);
-            if($existe==null){
-                $medioPrensa = new SeccionPrensa();
-                $medioPrensa->id = $medio24->idseccion;
-                $medioPrensa->nombreSeccion = $medio24->nombre;
-                $medioPrensa->estado = $medio24->estado;
+        foreach ($medios24 as $medio) {
+            $existe = MedioPrensa::find($medio->idMedioPrensa);
+            if($existe == null){
+                $medioPrensa = new MedioPrensa();
+                $medioPrensa->id = $medio->idMedioPrensa;
+                $medioPrensa->nombreMedio = $medio->nombreMedioPrensa;
+                if($medio->tipoMedio == 1){
+                    $medioPrensa->subTipoMedio = 'Diario';
+                }else{
+                    $medioPrensa->subTipoMedio = 'Revista';
+                }
+                $medioPrensa->tipoMedios_id = 1;
                 $medioPrensa->save();
 
-                $arrayMedios[] = $medioPrensa->nombreSeccion;
+                print_r($medio);
+                echo '</br>';
+            }
+        }
+
+        return response()->json("ok");
+    }
+
+    public function importarSeccionesPrensa(){
+        $secciones24 = DB::connection('web_noticias')->table('secciones')
+                    ->select('idSeccion','numeroSeccion','nombreSeccion','medio_prensas_idMedioPrensa as idMedio')
+                    ->get();
+
+        foreach ($secciones24 as $seccion) {
+            $existe = SeccionPrensa::find($seccion->idSeccion);
+            if($existe==null){
+                $seccionPrensa = new SeccionPrensa();
+                $seccionPrensa->id = $seccion->idSeccion;
+                $seccionPrensa->numeroSeccion = $seccion->numeroSeccion;
+                $seccionPrensa->nombreSeccion = $seccion->nombreSeccion;
+                $seccionPrensa->mediosPrensa_id = $seccion->idMedio;
+                $seccionPrensa->save();
+
+                print_r($seccion);
+                echo '</br>';
             }
             
         }
@@ -702,62 +898,91 @@ class ControllerBusqueda extends Controller
     }
 
     public function importarPautasPrensa24(){
+
+        //$fechaInicio = date('2018-02-01');
         $fechaActual = date('Y-m-d');
-        //$fechaActual = '2017-10-04';
-        $fechaInicio = '2017-12-12';
+        $fechaInicio = date("Y-m-d",strtotime($fechaActual."- 1 days"));
+        while(strtotime($fechaInicio)<=strtotime($fechaActual)){
+            echo $fechaInicio.'</br>';
+        
         //importacion dia a dia
-        $pautas24 = DB::connection('mysql_24_prensa')->table('tbl_pauta_prensa')
-                    ->whereBetween('fecha',[$fechaInicio,$fechaActual])
-                    ->select('idpauta_prensa','fecha','pagina','idseccion','titular','idmedio','fecha_registro','codigo','estado','tipo_servicio','texto2','equivalencia')
+        $pautas24 = DB::connection('web_noticias_prensa')->table('tbl_pauta_prensa')
+                    //->whereBetween('fecha',[$fechaInicio,$fechaActual])
+                    ->where('fecha','=',$fechaInicio)
+                    ->select('idpauta_prensa','fecha','pagina','idseccion','titular','idmedio','fecha_registro','codigo','estado','tipo_servicio','texto','equivalencia')
                     ->get();
 
         foreach ($pautas24 as $pauta) {
             try{
                 $existe = PautaPrensa::find($pauta->idpauta_prensa);
                 if($existe == null){
+                    $nuevoMedio = DB::connection('web_noticias')->table('medios_prensa_ordenados')
+                                    ->where('medios_prensa_mal_id','=',$pauta->idmedio)
+                                    ->first();
+
+                    $nuevaSeccion = DB::connection('web_noticias')->table('secciones_ordenas')
+                                    ->join('secciones','secciones_ordenas.secciones_idSeccion','secciones.idSeccion')
+                                    ->where('secciones_ordenas.secciones_mal_idseccion','=',$pauta->idseccion)
+                                    ->where('secciones.medio_prensas_idMedioPrensa','=',$nuevoMedio->medio_prensas_idMedioPrensa)
+                                    ->value('secciones_ordenas.secciones_idSeccion');
+
                     $pautaNueva = new PautaPrensa();
                     $pautaNueva->id = $pauta->idpauta_prensa;
                     $pautaNueva->titular = $pauta->titular;
-                    $pautaNueva->texto = $pauta->texto2;
+                    $pautaNueva->texto = $pauta->texto;
                     $pautaNueva->fechaPauta = $pauta->fecha;
                     $pautaNueva->paginas = $pauta->pagina;
                     $pautaNueva->fechaRegistro = $pauta->fecha_registro;
                     $pautaNueva->tipoPauta = $pauta->tipo_servicio;
                     //$pautaNueva->equivalencia = $pauta->equivalencia;
                     $pautaNueva->estado = $pauta->estado;
-                    $pautaNueva->mediosPrensa_id = $pauta->idmedio;
-                    $pautaNueva->seccionesPrensa_id = $pauta->idseccion;
+                    $pautaNueva->mediosPrensa_id = $nuevoMedio->medio_prensas_idMedioPrensa;
+                    $pautaNueva->seccionesPrensa_id = $nuevaSeccion;
                     $pautaNueva->save();
 
-                    $recortes24 = DB::connection('mysql_24_prensa')->table('tbl_pauta_recorte')
+                    /*$recortes24 = DB::connection('web_noticias_prensa')->table('tbl_pauta_recorte')
                             ->where('idpauta_servicio','=',$pautaNueva->id)
                             ->select('idpauta_servicio','alto','ancho','codigo','equivalencia')
+                            ->get();*/
+
+                    $recortes = DB::connection('intranet_prensa')->table('recortes')
+                            ->where('pauta_prensas_idPautaPrensa','=',$pautaNueva->id)
+                            ->where('ruta','not like','%preview%')
+                            ->select('alto','ancho','pagina','ruta','pauta_prensas_idPautaPrensa')
                             ->get();
 
-                    $equivalencia = 0;
-                    $codigo = $pauta->codigo;
+                    //$equivalencia = 0;
+                    /*$codigo = $pauta->codigo;
                     $fecha = $pauta->fecha;
                     $año = substr($fecha, 0,4);
                     $mes = substr($fecha, 5,2);
-                    $dia = substr($fecha, 8,2);
+                    $dia = substr($fecha, 8,2);*/
+                    $totalRecortes = count($recortes);
+                    $varR = 0;
 
-                    foreach ($recortes24 as $recorte) {
+                    foreach ($recortes as $recorte) {
+                        $varR++;
                         $recorteNuevo = new PautaRecorte();
-                        $recorteNuevo->pautasPrensa_idPauta = $recorte->idpauta_servicio;
+                        $recorteNuevo->pautasPrensa_idPauta = $recorte->pauta_prensas_idPautaPrensa;
                         $recorteNuevo->alto = $recorte->alto;
                         $recorteNuevo->ancho = $recorte->ancho;
-                        $equivalencia = $equivalencia + $recorte->equivalencia;
-                        $recorteNuevo->rutaImagen = "http://servicios.noticiasperu.pe/medios/Recortes/".$año."/".$mes."/".$dia."/".$codigo."_".$recorte->codigo.".jpg";
+                        $recorteNuevo->pagina = $recorte->pagina;
+                        //$equivalencia = $equivalencia + $recorte->equivalencia;
+                        //$recorteNuevo->rutaImagen =$codigo."_".$varR."_".$totalRecortes.".jpg";
+                        $recorteNuevo->rutaImagen =$recorte->ruta;
                         $recorteNuevo->save();
                     }
 
-                    $pautaNueva->equivalencia = $equivalencia;
-                    $pautaNueva->save();
+                    /*$pautaNueva->equivalencia = $equivalencia;
+                    $pautaNueva->save();*/
                 }
             }catch(\Exception $e){
                 echo $pauta->idpauta_prensa.'</br>';
                 echo substr($e, 0,250).'</br>';
             }
+        }
+
+        $fechaInicio = date("Y-m-d",strtotime($fechaInicio."+ 1 days"));
         }
 
 
@@ -766,9 +991,10 @@ class ControllerBusqueda extends Controller
 
     public function importarPautasTv24(){
         $fechaActual = date('Y-m-d');
-        $fechaInicio = '2017-10-01';
+        $fechaInicio = date("Y-m-d",strtotime($fechaActual."- 2 days"));
+        //$fechaInicio = '2018-01-01';
 
-        $pautas24 = DB::connection('mysql_24')->table('pautatv')
+        $pautas24 = DB::connection('noticias_24')->table('pautatv')
                     ->whereBetween('Fecha',[$fechaInicio,$fechaActual])
                     ->select('NumID','Titular','Texto','Fecha','Hora','Duracion','equivalencia','FechaRegistro','tipo_servicio','Programa')
                     ->get();
@@ -804,9 +1030,10 @@ class ControllerBusqueda extends Controller
 
     public function importarPautasRadio24(){
         $fechaActual = date('Y-m-d');
-        $fechaInicio = '2017-10-01';
+        $fechaInicio = date("Y-m-d",strtotime($fechaActual."- 2 days"));
+        //$fechaInicio = '2018-01-01';
 
-        $pautas24 = DB::connection('mysql_24')->table('pautaradio')
+        $pautas24 = DB::connection('noticias_24')->table('pautaradio')
                     ->whereBetween('Fecha',[$fechaInicio,$fechaActual])
                     ->select('NumID','Titular','Texto','Fecha','Hora','Duracion','equivalencia','FechaRegistro','tipo_servicio','Programa')
                     ->get();
@@ -842,10 +1069,11 @@ class ControllerBusqueda extends Controller
 
     public function importarPautasInternet24(){
         $fechaActual = date('Y-m-d');
-        $fechaInicio = '2017-10-01';
+        $fechaInicio = date("Y-m-d",strtotime($fechaActual."- 5 days"));
+        //$fechaInicio = '2018-01-01';
 
-        $pautas24 = DB::connection('mysql_24')->table('pautainternetweb')
-                    ->where('Fecha',[$fechaInicio,$fechaActual])
+        $pautas24 = DB::connection('noticias_24')->table('pautainternetweb')
+                    ->whereBetween('Fecha',[$fechaInicio,$fechaActual])
                     ->select('NumID','Titular','Texto','Fecha','equivalencia','FechaRegistro','tipo_servicio','Ruta','Medio')
                     ->get();
 
@@ -875,6 +1103,156 @@ class ControllerBusqueda extends Controller
                 echo substr($e, 0,250).'</br>';
             }
         }
+    }
+
+    public function importarMediosInternet(){
+        $medios24 = DB::connection('noticias')->table('medioav')
+                    ->where('Tipo','=',4)
+                    ->select('NumID','Tipo','Nombre')
+                    ->distinct()
+                    ->get();
+
+        foreach ($medios24 as $medio) {
+            $existe = MedioInternet::find($medio->NumID);
+            if(count($existe)==0){
+                $medioInternet = new MedioInternet();
+                $medioInternet->id = $medio->NumID;
+                $medioInternet->nombreMedio = $medio->Nombre;
+                $medioInternet->tipoMedios_id = $medio->Tipo;
+                $medioInternet->save();
+
+                print_r($medio);
+                echo '</br>';
+            }
+        }
+
+        return response()->json('ok');
+    }
+
+    public function importarMediosAudioVisuales(){
+        $medios24 = DB::connection('noticias')->table('medios')
+                    ->select('idMedio','nombre','señal','tipo_medios_idTipoMedio')
+                    ->distinct()
+                    ->get();
+
+        foreach ($medios24 as $medio) {
+            $existe = MedioAV::find($medio->idMedio);
+            if(count($existe)==0){
+                $medioav = new MedioAV();
+                $medioav->id = $medio->idMedio;
+                $medioav->nombreMedio = $medio->nombre;
+                $medioav->detalles = $medio->señal;
+                $medioav->tipoMedios_id = $medio->tipo_medios_idTipoMedio;
+                $medioav->save();
+
+                print_r($medio);
+                echo '</br>';
+            }
+        }
+
+        return response()->json('ok');
+    }
+
+    public function importarProgramasAudioVisuales(){
+        $programas24 = Db::connection('noticias')->table('programa')
+                        ->select('NumID','Nombre','Medio')
+                        ->distinct()
+                        ->get();
+
+        foreach ($programas24 as $programa) {
+            $existe = ProgramaAV::find($programa->NumID);
+            if(count($existe)==0){
+                $mediosOrd = DB::connection('noticias')->table('medios_ordenados')
+                            ->where('medios26_idMedio','=',$programa->Medio)
+                            ->first();
+
+                if($mediosOrd!=null){
+                    $medioNvo = $mediosOrd->medios_idMedio;
+                    $programaav = new ProgramaAV();
+                    $programaav->id = $programa->NumID;
+                    $programaav->nombrePrograma = $programa->Nombre;
+                    $programaav->mediosAV_id = $medioNvo;
+                    $programaav->save();
+
+                    print_r($programa);
+                    echo '</br>';
+                }
+
+            }
+        }
+
+        return response()->json('ok');
+    }
+
+    public function corregirRecortes(){
+        $fechaInicio = date('2018-02-07');
+        $fechaFin = date('Y-m-d');
+
+        while(strtotime($fechaInicio)<=strtotime($fechaFin)){
+            echo "Fecha:".$fechaInicio.'</br>';
+            $pautasPrensa = PautaPrensa::where('fechaPauta','=',$fechaInicio)
+                            ->select('id','titular')
+                            //->limit(50)
+                            ->get();
+
+            foreach ($pautasPrensa as $pauta) {
+                $antiguo = false;
+                $recortes = DB::connection('intranet_prensa')->table('recortes')
+                            ->where('pauta_prensas_idPautaPrensa','=',$pauta->id)
+                            ->where('ruta','NOT LIKE','%preview%')
+                            ->select('ruta','pauta_prensas_idPautaPrensa as idpauta','alto','ancho','pagina')
+                            ->get();
+
+                if(count($recortes)==0){
+                    $recortes = DB::connection('web_noticias')->table('tbl_pauta_recorte')
+                            ->where('idpauta_servicio','=',$pauta->id)
+                            ->select('idpauta_servicio as idpauta','alto','ancho')
+                            ->get();
+
+                    $codigo = DB::connection('web_noticias_prensa')->table('tbl_pauta_prensa')
+                                ->where('idpauta_prensa','=',$pauta->id)
+                                ->value('codigo');
+
+                    $antiguo=true;
+                }
+
+                $totalRecortes = count($recortes);
+                $i = 0; 
+                echo $pauta->id.'</br>';
+
+                foreach ($recortes as $recorte) {
+                    $i++;
+                    if($antiguo){
+                        $existe = PautaRecorte::where('rutaImagen','=',$codigo.'_'.$i.'.jpg')
+                                    ->get();
+                    }else{
+                        $existe = PautaRecorte::where('rutaImagen','=',$recorte->ruta)
+                                    ->get();
+                    }
+                    if(count($existe)==0){
+                        $recorteNuevo = new PautaRecorte();
+                        $recorteNuevo->pautasPrensa_idPauta = $recorte->idpauta;
+                        $recorteNuevo->alto = $recorte->alto;
+                        $recorteNuevo->ancho = $recorte->ancho;
+                        if($antiguo){
+                            $rutaNueva = $recorteNuevo->rutaImagen = $codigo.'_'.$i.'.jpg';
+                        }else{
+                            $recorteNuevo->pagina = $recorte->pagina;
+                            $rutaNueva = $recorteNuevo->rutaImagen = $recorte->ruta;
+                        }
+                        $recorteNuevo->save();
+                        echo $rutaNueva.'</br>';
+                    }else{
+                        echo "Ya existe</br>";
+                    }
+                    
+                }
+                echo '</br>';
+            }
+            $fechaInicio = date("Y-m-d",strtotime($fechaInicio."+ 1 days"));
+        }
+
+        return response()->json("Terminado");
     }
 
 }

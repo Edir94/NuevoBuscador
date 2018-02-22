@@ -101,7 +101,7 @@
                                         </span>
                                         <br>
                                         <center>
-                                            <img src="{{ $recorte['rutaImagen'] }}" width="70%"  class="img-responsive">
+                                            <img src="{{ $recorte['rutaImagen'] }}" width="70%" class="img-responsive">
                                         </center>
                                         <br>
                                         <br>

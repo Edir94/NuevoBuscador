@@ -10,7 +10,7 @@
 
     <title>
         Servicios | Noticias Perú
-    </title>
+    </title>    
     <!--{/{ config('app.name', 'Laravel') }}-->
 
     <!-- Styles -->

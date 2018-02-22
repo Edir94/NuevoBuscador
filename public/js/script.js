@@ -1,7 +1,33 @@
 $(function () {
+    $("#textoBusqueda").tokenfield();
+
     $('.dateRange').daterangepicker({
+        singleDatePicker:true,
         locale:{
             format:'DD/MM/YYYY',
+            daysOfWeek: [
+                "Do",
+                "Lu",
+                "Ma",
+                "Mi",
+                "Ju",
+                "Vi",
+                "Sa"
+            ],
+            monthNames: [
+                "Enero",
+                "Febrero",
+                "Marzo",
+                "Abril",
+                "Mayo",
+                "Junio",
+                "Julio",
+                "Agusto",
+                "Septiembre",
+                "Octubre",
+                "Noviembre",
+                "Diciembre"
+            ],
         },
         showDropdowns: false,
     });
@@ -14,15 +40,15 @@ $(function () {
         //"serverSide": true,
         "searching": true,
         "ajax": {
-            //"url":"/api/Busqueda",
-            "url":"/api/Busqueda24",
+            "url":"/api/Busqueda",
+            //"url":"/api/Busqueda24",
             "data":{
 
             },
             "datatype":"JSON"
         },
         "columns":[
-            {data:'checkPauta',name:'checkPauta'},
+            {data:'checkPauta',name:'checkPauta', orderable: false, searchable:false},
             {data:'fechaPauta',name:'fechaPauta'},
             {data:'tipoPauta',name:'tipoPauta'},
             {data:'nombreMedio',name:'nombreMedio'},
@@ -31,7 +57,7 @@ $(function () {
             {data: 'opciones', name: 'opciones', orderable: false, searchable: false}
 
         ],
-        "order": [[ 0, "desc" ]]
+        "order": [[ 1, "desc" ]]
      });
 
     $('.datePicker').daterangepicker({
@@ -43,6 +69,8 @@ $(function () {
     });
 
 
+    // Handle click on "Select all" control
+   checkGeneral(oTableResultados);
 
     /*$('#tblResultados tbody').on('click','tr',function(){
         var pauta = $('td',this).eq(5).text();
@@ -51,7 +79,97 @@ $(function () {
     });*/
 });
 
-$("#textoBusqueda").tokenfield();
+function checkGeneral(oTableResultados){
+    $('#checkGeneral').on('click', function(){
+        // Check/uncheck all checkboxes in the table
+        var rows = oTableResultados.rows({ 'search': 'applied' }).nodes();
+        $('input[type="checkbox"]', rows).prop('checked', this.checked);
+        var checkG = $(this).prop('checked');
+        var token = $('#token').val();
+        var value = 1;
+        if(checkG==false){
+            value = 0;
+        }
+        $.ajax({
+            type: "POST",
+            url: "/cambiarvalortodo",
+            headers:{'X-CSRF-TOKEN': token},
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                value:value
+            },
+            success: function(datos) {
+
+            }
+        });
+    });
+
+    // Handle click on checkbox to set state of "Select all" control
+    $('#tblResultados tbody').on('change', 'input[type="checkbox"]', function(){
+        // If checkbox is not checked
+        if(!this.checked){
+            var el = $('#checkGeneral').get(0);
+            // If "Select all" control is checked and has 'indeterminate' property
+            if(el && el.checked && ('indeterminate' in el)){
+                // Set visual state of "Select all" control 
+                // as 'indeterminate'
+                el.indeterminate = true;
+            }
+        }
+    });
+    
+    $('#check').on('submit', function(e){
+        var form = this;
+
+        // Iterate over all checkboxes in the table
+        table.$('input[type="checkbox"]').each(function(){
+            // If checkbox doesn't exist in DOM
+            if(!$.contains(document, this)){
+                // If checkbox is checked
+                if(this.checked){
+                    // Create a hidden element 
+                    $(form).append(
+                        $('<input>')
+                            .attr('type', 'hidden')
+                            .attr('name', this.name)
+                            .val(this.value)
+                    );
+                }
+            } 
+        });
+    });
+}
+
+//Buscador
+function cambiarValorPauta(id){
+    var pauta = id.value;
+    var data = pauta.split("-");
+    var tipo = data[0];
+    var idpauta = data[1];
+    var token = $('#token').val();
+    var check1 = $(id).prop('checked');
+    var value = 1;
+    if(check1==false){
+        value = 0;
+    }
+
+    $.ajax({
+        type: "POST",
+        url: "/cambiarvalorpauta",
+        headers:{'X-CSRF-TOKEN': token},
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            tipo:tipo,
+            idpauta:idpauta,
+            value:value
+        },
+        success: function(datos) {
+
+        }
+    });
+}
 
 $('#medioBusqueda').click(function(){
     var id="";
@@ -69,8 +187,8 @@ $('#medioBusqueda').click(function(){
     }
     $("#medioBusqueda").tokenfield({
         autocomplete:{
-            //source:"search/medios/"+id,
-            source:"search/medios24/"+id,
+            source:"search/medios/"+id,
+            //source:"search/medios24/"+id,
             delay:100,
             minLength: 1,
         },
@@ -89,9 +207,8 @@ function BuscarPautas()
 {
     var textos = $('#textoBusqueda').val();
     var medios = $('#medioBusqueda').val();
-    var fechas = $('#rangoFecha').val().split(' - ');
-    var fechaInicio = fechas[0];
-    var fechaFin = fechas[1];
+    var fechaInicio = $('#fechaInicio').val();
+    var fechaFin = $('#fechaFin').val();
     var checkPrensa;
     var checkTv;
     var checkRadio;
@@ -134,8 +251,8 @@ function BuscarPautas()
         //"serverSide": true,
         "searching": true,
         "ajax": {
-            //"url":"/api/Busqueda2",
-            "url":"/api/BusquedaAv24",
+            "url":"/api/Busqueda2",
+            //"url":"/api/BusquedaAv24",
             "data":{
                 fechaInicio:fechaInicio,
                 fechaFin:fechaFin,
@@ -152,7 +269,7 @@ function BuscarPautas()
             "datatype":"JSON"
         },
         "columns":[
-            {data:'checkPauta',name:'checkPauta'},
+            {data:'checkPauta',name:'checkPauta', orderable: false, searchable:false},
             {data:'fechaPauta',name:'fechaPauta'},
             {data:'tipoPauta',name:'tipoPauta'},
             {data:'nombreMedio',name:'nombreMedio'},
@@ -163,8 +280,9 @@ function BuscarPautas()
         ],
         initComplete: function() {
             cargarMediosFiltrado();
+            checkGeneral(oTableResultados);
         },
-        "order": [[ 0, "desc" ]]
+        "order": [[ 1, "desc" ]]
      });
 
     $('#contenedorBusqueda').attr('class','panel-collapse collapse');
@@ -221,7 +339,7 @@ $('.btnFiltro').click(function(){
 
 function cargarMediosFiltrado(){
     $('#contenedorMedios').empty();
-    $.get('/mediosFiltrado24',function(data){
+    $.get('/mediosFiltrado',function(data){
         var i=0;
         $.each(data,function(index,value){
             i++;
@@ -290,7 +408,7 @@ function filtradoRapidoBusqueda(){
         //"serverSide": true,
         "searching": true,
         "ajax": {
-            "url":"/api/FiltroRapido24",
+            "url":"/api/FiltroRapido",
             "data":{
                 filtroPrensa:filtroPrensa,
                 filtroTv:filtroTv,
@@ -301,7 +419,7 @@ function filtradoRapidoBusqueda(){
             "datatype":"JSON"
         },
         "columns":[
-            {data:'checkPauta',name:'checkPauta'},
+            {data:'checkPauta',name:'checkPauta', orderable: false, searchable:false},
             {data:'fechaPauta',name:'fechaPauta'},
             {data:'tipoPauta',name:'tipoPauta'},
             {data:'nombreMedio',name:'nombreMedio'},
@@ -312,8 +430,9 @@ function filtradoRapidoBusqueda(){
         ],
         initComplete: function() {
             cargarMediosFiltrado();
+            checkGeneral(oTableResultados);
         },
-        "order": [[ 0, "desc" ]]
+        "order": [[ 1, "desc" ]]
      });
 }
 
@@ -387,7 +506,8 @@ function filtradoRapidoMedios(){
         //"serverSide": true,
         "searching": true,
         "ajax": {
-            "url":"/api/FiltroRapido24",
+            //"url":"/api/FiltroRapido24",
+            "url":"/api/FiltroRapido",
             "data":{
                 filtroPrensa:filtroPrensa,
                 filtroTv:filtroTv,
@@ -398,7 +518,7 @@ function filtradoRapidoMedios(){
             "datatype":"JSON"
         },
         "columns":[
-            {data:'checkPauta',name:'checkPauta'},
+            {data:'checkPauta',name:'checkPauta', orderable: false, searchable:false},
             {data:'fechaPauta',name:'fechaPauta'},
             {data:'tipoPauta',name:'tipoPauta'},
             {data:'nombreMedio',name:'nombreMedio'},
@@ -407,7 +527,10 @@ function filtradoRapidoMedios(){
             {data: 'opciones', name: 'opciones', orderable: false, searchable: false}
 
         ],
-        "order": [[ 0, "desc" ]]
+        initComplete: function() {
+            checkGeneral(oTableResultados);
+        },
+        "order": [[ 1, "desc" ]]
      });
 }
 
@@ -426,6 +549,64 @@ document.onkeypress = function(){
     }
 }
 
-function cambiarValorPauta(id){
-    //alert(id.value);
+function limpiarOpciones(){
+    var hoy = new Date();
+    var mes = hoy.getMonth()+1;
+    if(mes<10){
+        mes = "0"+mes;
+    }
+    var fecha = hoy.getUTCDate()+"/"+mes+"/"+hoy.getFullYear();
+    //alert(fecha);
+    $('#medioBusqueda').tokenfield('setTokens',[]);
+    $('#medioBusqueda').val('');
+    $('#medioBusqueda').tokenfield('destroy');
+    $('#textoBusqueda').tokenfield('setTokens',[]);
+    $('#textoBusqueda').val('');
+    $('.btnBusquedaTipo').attr('class','btn btn-warning btnBusquedaTipo');
+    $('#fechaInicio').val(fecha);
+    $('#fechaFin').val(fecha);
 }
+
+$('#selectPeriodo').change(function(){
+    var valPeriodo = $('#selectPeriodo').val();
+    if(valPeriodo==4){
+        $('#divFecha').show();
+    }else{
+        $('#divFecha').hide();
+    }
+});
+
+$('#fechaInicio').change(function(){
+    var min = $('#fechaInicio').val();
+    $('#fechaFin').daterangepicker({
+        minDate:min,
+        singleDatePicker:true,
+        locale:{
+            format:'DD/MM/YYYY',
+            daysOfWeek: [
+                "Do",
+                "Lu",
+                "Ma",
+                "Mi",
+                "Ju",
+                "Vi",
+                "Sa"
+            ],
+            monthNames: [
+                "Enero",
+                "Febrero",
+                "Marzo",
+                "Abril",
+                "Mayo",
+                "Junio",
+                "Julio",
+                "Agusto",
+                "Septiembre",
+                "Octubre",
+                "Noviembre",
+                "Diciembre"
+            ],
+        },
+        showDropdowns: false,
+    });
+});
